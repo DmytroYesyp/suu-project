@@ -1,5 +1,8 @@
 # Knative \- OTel
 
+[GoogleDocs](https://docs.google.com/document/d/1zVsoGiIb50rPzTMCSIOD62AAp-FyuXdTZhBHDyCoWtY/edit?tab=t.0)
+
+
 ## Jan Chyczyński, Kacper Kozak, Dmytro Yesyp, Bartłomiej Słupik
 
 ## Wprowadzenie
