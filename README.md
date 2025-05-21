@@ -67,7 +67,123 @@ Opis katalogu „solution” przykładowej aplikacji Knative Bookstore – w pe�
 
 ![](images/image1.png)
 
-Rys.1 Architektura Systemu
+Architektura Systemu
+
+# Opis konfiguracji środowiska
+
+## **Konfiguracja Środowiska i Uruchomienie Aplikacji (Minikube, Knative, Camel K)**
+
+Prezentowane demo zostało wdrożone na **lokalnym klastrze Kubernetesa** przy użyciu **Minikube**. 
+
+### **1\. Instalacja WSL i Ubuntu 20.04**
+
+W przypadku pracy na systemie operacyjnym Windows, pierwszym krokiem jest instalacja **Windows Subsystem for Linux (WSL)** wraz z dystrybucją **Ubuntu 20.04**. Proces instalacji realizowany jest za pomocą poniższego polecenia:
+
+```bash  
+wsl \--install Ubuntu-20.04  
+```
+
+### **2\. Instalacja Minikube**
+
+Minikube pełni rolę lokalnego klastra Kubernetes. Poniżej przedstawiono dwie metody instalacji:
+
+#### Metoda 1: Instalacja bezpośrednia (dla systemów Linux)
+
+```bash  
+curl \-LO https://storage.googleapis.com/minikube/releases/latest/minikube\_latest\_amd64.deb  
+sudo dpkg \-i minikube\_latest\_amd64.deb  
+```
+
+#### Metoda 2: Instalacja na WSL2 (zalecana dla środowiska Windows) 
+
+Dla użytkowników WSL2 zaleca się zapoznanie się ze szczegółowym przewodnikiem instalacji dostępnym pod adresem: \[Kubernetes Setup with Minikube on WSL2\](https://gaganmanku96.medium.com/kubernetes-setup-with-minikube-on-wsl2-2023-a58aea81e6a3). 
+
+### **3\. Instalacja Knative Client (kn)** 
+
+Knative Client (\`kn\`) to narzędzie wiersza poleceń służące do zarządzania komponentami Knative. Instalacja odbywa się poprzez następujące komendy: 
+
+```bash   
+wget https://github.com/knative/client/releases/download/knative-v1.18.0/kn-linux-amd64   
+mv kn-linux-amd64   
+kn chmod \+x kn   
+sudo mv kn /usr/local/bin   
+kn version  
+```
+
+### **4\. Instalacja Knative Quickstart Plugin (kn-quickstart)**
+
+Plugin kn-quickstart ułatwia proces konfiguracji środowiska Knative. Sposób instalacji przedstawiono poniżej:
+
+```bash   
+wget https://github.com/knative-extensions/kn-plugin-quickstart/releases/download/knative-v1.18.0/kn-quickstart-linux-amd64  
+mv kn-quickstart-linux-amd64 kn-quickstart  
+sudo mv kn-quickstart /usr/local/bin  
+kn quickstart \--help  
+```
+
+### 5\. Tworzenie Klastra Knative za pomocą kn quickstart
+
+Do szybkiego utworzenia i skonfigurowania klastra z zainstalowanym Knative należy użyć komendy kn quickstart:
+
+```bash   
+kn quickstart minikube  
+```
+
+**Należy postępować zgodnie z instrukcjami wyświetlanymi przez skrypt podczas jego wykonywania.**
+
+W celu walidacji poprawności utworzenia klastra, można wykorzystać komendę:
+
+```bash   
+minikube profile list  
+```
+
+### 6\. [Instalacja func cli](https://knative.dev/docs/functions/install-func/#installing-the-func-cli)
+
+func CLI jest narzędziem wspierającym pracę z Knative Functions. Jego instalacja przebiega w następujący sposób:
+
+### Instalacja Kamel
+
+https://downloads.apache.org/camel/camel-k/2.6.0/  
+Analogicznie do func:  
+```bash  
+tar \-xzf camel-k-client-2.6.0-linux-amd64.tar.gz  
+mv kamel /usr/local/bin  
+```
+
+### **7\. Instalacja Apache Camel K (kamel)**
+
+Apache Camel K to rozwiązanie Serverless do integracji, zaprojektowane do działania natywnie w środowisku Kubernetes. Instalacja klienta kamel realizowana jest poprzez:
+
+```bash   
+wget [https://downloads.apache.org/camel/camel-k/2.6.0/camel-k-client-2.6.0-linux-amd64.tar.gz](https://downloads.apache.org/camel/camel-k/2.6.0/camel-k-client-2.6.0-linux-amd64.tar.gz)  
+tar \-xvzf camel-k-client-2.6.0-linux-amd64.tar.gz   
+sudo mv kamel /usr/local/bin/   
+chmod \+x /usr/local/bin/kamel   
+kamel version   
+```
+
+### 8\. Uruchomienie aplikacji
+
+Po pomyślnej konfiguracji środowiska, aplikację można uruchomić.
+
+```bash  
+./solution.sh
+```  
+Wykonujemy ewentualne polecenia wypisane przez skrypt.
+
+## **Opis Działania Aplikacji**
+
+W niniejszej sekcji przedstawiono wizualne potwierdzenie poprawnego uruchomienia komponentów frontendu i backendu aplikacji.  
+**1\. Działanie Frontendu**
+
+![](images\frontend_example_app_1.png)
+Powyższy zrzut ekranu prezentuje poprawnie uruchomiony interfejs użytkownika (frontend) aplikacji.   
+
+**2\. Działanie Backendu**
+
+![](images\backend_example_app_1.png)
+
+Powyższy zrzut ekranu prezentuje poprawnie uruchomiony backendu aplikacji. 
 
 ## Modyfikacja aplikacji Bookstore (Knative Eventing)
 
@@ -100,7 +216,7 @@ W ramach naszego projektu dokonamy rozszerzenia aplikacji demonstracyjnej Bookst
 ### ![](images/image2.png)
 
 
-Rys.2 Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
+Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
 
 ### 
 
