@@ -141,16 +141,15 @@ minikube profile list
 
 func CLI jest narzędziem wspierającym pracę z Knative Functions. Jego instalacja przebiega w następujący sposób:
 
-### Instalacja Kamel
-
-https://downloads.apache.org/camel/camel-k/2.6.0/  
-Analogicznie do func:  
 ```bash  
-tar \-xzf camel-k-client-2.6.0-linux-amd64.tar.gz  
-mv kamel /usr/local/bin  
+wget https://github.com/knative/func/releases/download/knative-v1.18.1/func_linux_amd64
+mv func_linux_amd64 func
+chmod +x func
+sudo mv func /usr/local/bin
+func version
 ```
 
-### **7\. Instalacja Apache Camel K (kamel)**
+### **7\. [Instalacja Apache Camel K (kamel)](https://downloads.apache.org/camel/camel-k/2.6.0/)**
 
 Apache Camel K to rozwiązanie Serverless do integracji, zaprojektowane do działania natywnie w środowisku Kubernetes. Instalacja klienta kamel realizowana jest poprzez:
 
