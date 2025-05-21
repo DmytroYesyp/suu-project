@@ -174,11 +174,14 @@ Wykonujemy ewentualne polecenia wypisane przez skrypt.
 
 W niniejszej sekcji przedstawiono wizualne potwierdzenie poprawnego uruchomienia komponentów frontendu i backendu aplikacji.  
 **1\. Działanie Frontendu**
+![frontend aplikacji](https://github.com/user-attachments/assets/af6bb047-549b-400c-9bc8-6074f7645661)
 
 ![](images\frontend_example_app_1.png)
+
 Powyższy zrzut ekranu prezentuje poprawnie uruchomiony interfejs użytkownika (frontend) aplikacji.   
 
 **2\. Działanie Backendu**
+![Backend](https://github.com/user-attachments/assets/90a3824f-c8fe-4bed-b8e9-56b8fd36daaf)
 
 ![](images\backend_example_app_1.png)
 
