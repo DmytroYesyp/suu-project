@@ -1,0 +1,24 @@
+# otel-collector-rbac.yaml (ЗНОВУ ВИПРАВЛЕНО - додано "services")
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: otel-collector-reader
+  namespace: default # Роль буде діяти тільки в default namespace
+rules:
+  - apiGroups: [""] # "" позначає основну групу API (для Pods, Services, Endpoints)
+    resources: ["pods", "endpoints", "services"] # <<< ДОДАНО "services"
+    verbs: ["get", "list", "watch"] # Дозволяємо отримувати, перелічувати та відстежувати ці ресурси
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: otel-collector-reader-binding
+  namespace: default # Прив'язка ролі буде діяти тільки в default namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otel-collector-reader # Посилання на створену вище роль
+subjects:
+  - kind: ServiceAccount
+    name: default # Прив'язуємо роль до ServiceAccount 'default'
+    namespace: default # ServiceAccount знаходиться в default namespace

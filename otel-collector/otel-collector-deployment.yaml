@@ -1,0 +1,38 @@
+# otel-collector-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: default
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.99.0
+        command: ["/otelcol-contrib"]
+        args: ["--config=/conf/collector.yaml"]
+        ports:
+        - name: otlp-grpc
+          containerPort: 4317
+        - name: otlp-http
+          containerPort: 4318
+        - name: prom-metrics
+          containerPort: 8888
+        volumeMounts:
+        - name: otel-collector-config-vol
+          mountPath: /conf
+          readOnly: true
+      volumes:
+      - name: otel-collector-config-vol
+        configMap:
+          name: otel-collector-config

@@ -4,12 +4,12 @@
 echo "🚀 Solution Script: This script will install everything required to run the Bookstore Sample App, and the Bookstore itself."
 
 # Validate that the user is in the correct directory /solution
-if [ "${PWD##*/}" != "solution" ]; then
-    echo "⚠️ Please run this script in the /solution directory. Exiting..."
-    exit
-fi
-echo "✅ You are in the correct directory: /solution"
-read -p "🛑 Press ENTER to continue or Ctrl+C to abort..."
+# if [ "${PWD##*/}" != "solution" ]; then
+#     echo "⚠️ Please run this script in the /solution directory. Exiting..."
+#     exit
+# fi
+# echo "✅ You are in the correct directory: /solution"
+# read -p "🛑 Press ENTER to continue or Ctrl+C to abort..."
 
 # Install Knative Serving
 echo ""
@@ -80,8 +80,32 @@ export KO_DOCKER_REPO=$REGISTRY_HOST/$REGISTRY_USER
 # Install Camel-K
 echo ""
 echo "📦 Installing Camel-K..."
-kamel install --registry $REGISTRY_HOST --organization $REGISTRY_USER --registry-auth-username $REGISTRY_USER --registry-auth-password $REGISTRY_PASSWORD
+helm repo add camel-k https://apache.github.io/camel-k/charts/
+helm repo update
+
+helm install camel-k camel-k/camel-k --namespace camel-k --create-namespace
 echo "✅ Camel-K installed successfully."
+
+echo ""
+echo "⚙️ Deploying OpenTelemetry Collector components..."
+kubectl apply -f otel-collector/otel-collector-rbac.yaml
+kubectl apply -f otel-collector/otel-collector-configmap.yaml
+kubectl apply -f otel-collector/otel-collector-deployment.yaml
+kubectl apply -f otel-collector/otel-collector-config.yaml
+kubectl apply -f otel-collector/otel-collector-servicemonitor.yaml
+echo "✅ OpenTelemetry Collector components deployed."
+
+echo ""
+echo "⏳ Waiting for application and OpenTelemetry Collector pods to be ready..."
+kubectl wait --for=condition=ready pod -l app=node-server --timeout=300s -n default
+kubectl wait --for=condition=ready pod -l app=otel-collector --timeout=300s -n default
+echo "✅ All core pods are ready."
+
+echo ""
+echo "Important: OpenTelemetry Collector needs to re-read service account permissions. Restarting Collector deployment..."
+kubectl rollout restart deployment otel-collector -n default
+kubectl wait --for=condition=ready pod -l app=otel-collector --timeout=300s -n default
+echo "✅ OpenTelemetry Collector restarted and ready."
 
 # Install the Sample Bookstore App
 echo ""

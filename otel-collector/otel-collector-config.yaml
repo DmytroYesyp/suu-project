@@ -1,0 +1,25 @@
+# otel-collector-config.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: default
+  labels:
+    app: otel-collector
+spec:
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+    - name: prom-metrics
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+  selector:
+    app: otel-collector
+  type: ClusterIP

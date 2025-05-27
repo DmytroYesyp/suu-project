@@ -1,0 +1,19 @@
+# otel-collector-servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: otel-collector-sm
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: otel-collector
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - port: prom-metrics
+      path: /metrics
+      interval: 15s
