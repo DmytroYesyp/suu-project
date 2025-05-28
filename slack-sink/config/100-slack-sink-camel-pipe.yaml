@@ -16,7 +16,7 @@ spec:
     ref:
       kind: Kamelet  # Specifies that the sink is a Kamelet, a Camel K component for connecting to external services.
       apiVersion: camel.apache.org/v1  # The API version for Kamelet.
-      name: slack-sink  # The name of the Kamelet to use as the sink, in this case, a predefined "slack-sink" Kamelet.
+      name: unstable-slack-sink  # The name of the Kamelet to use as the sink, in this case, a predefined "slack-sink" Kamelet.
     properties:
       channel: ${slack.channel}  # The channel to post messages to, specified in the secret.
       webhookUrl: ${slack.webhook.url} # The webhook URL to use for posting messages, specified in the secret.
