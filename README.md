@@ -336,6 +336,41 @@ Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie ce
 
 ![](images/image3.png)
 
+## Implementacja modyfikacji aplikacji Bookstore
+
+### Niestabilny serwis "slack-sink"
+unstable-slack-sink.kamalet.yaml
+```
+apiVersion: camel.apache.org/v1
+kind: Kamelet
+```
+(...)
+```
+  template:
+    from:
+      uri: "kamelet:source"
+      steps:
+        - choice:
+            when:
+              - expression:
+                  simple: "${random(1,5)} == 1"
+                steps:
+                  - log:
+                      message: "Simulated failure"
+                  - throwException:
+                      exceptionType: "java.lang.RuntimeException"
+                      message: "Random simulated Slack failure"
+            otherwise:
+              steps:
+                - set-header:
+                    name: Content-Type
+                    constant: application/json
+                - marshal:
+                    json:
+                      library: Jackson
+                - toD: "https://{{webhookUrl}}"
+```
+
 ### **Podział zadań**
 
 * modyfikacja aplikacji: symulacja błędów w usłudze Slack Sink i obsługa błędów (2 os.)  
