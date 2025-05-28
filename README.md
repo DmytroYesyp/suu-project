@@ -163,12 +163,110 @@ kamel version
 
 ### 8\. Uruchomienie aplikacji
 
-Po pomyślnej konfiguracji środowiska, aplikację można uruchomić.
+Przed uruchomieniem skryptu należy zainstalować wszystkie wymagane komponenty opisane w rozdziale **„Konfiguracja i Wdrożenie Systemu Telemetrii”**. Dopiero po ich poprawnej instalacji można przystąpić do uruchomienia aplikacji według poniższych kroków:
 
 ```bash  
 ./solution.sh
 ```  
 Wykonujemy ewentualne polecenia wypisane przez skrypt.
+
+### **Konfiguracja i Wdrożenie Systemu Telemetrii**
+
+Sekcja szczegółowo opisuje proces konfiguracji i wdrożenia kompleksowego systemu telemetrii w środowisku Kubernetes, wykorzystującego Prometheus, Grafanę oraz OpenTelemetry Collector. Celem jest zbieranie metryk zarówno z komponentów systemu, jak i z aplikacyjnych punktów końcowych, w szczególności z serwisu Node.js.
+
+#### **Przegląd Architektury Monitorowania**
+
+Zaimplementowany system monitorowania opiera się na następujących kluczowych komponentach:
+
+* **Prometheus**: Działa jako centralna baza danych do przechowywania metryk, odpowiedzialna za ich zbieranie (scraping) oraz ocenę reguł alertów.  
+* **Grafana**: Służy do wizualizacji metryk zebranych przez Prometheusa, umożliwiając tworzenie dynamicznych pulpitów nawigacyjnych (dashboardów).  
+* **OpenTelemetry Collector**: Pełni rolę pośrednika, który zbiera metryki z aplikacji (w tym przypadku serwisu Node.js) w formacie Prometheus, a następnie przesyła je do Prometheusa. Collector również udostępnia swoje własne metryki stanu.
+
+#### **Co jest monitorowane?**
+
+System jest skonfigurowany do monitorowania dwóch głównych źródeł metryk:
+
+1. **Sam OpenTelemetry Collector**: Prometheus aktywnie skrobie metryki zdrowia i wydajności samego Collectora, zapewniając wgląd w jego działanie.  
+2. **Serwis node-server**: OpenTelemetry Collector skrobie metryki wystawiane przez serwis, a następnie przesyła je do Prometheusa. Ten model odciąża Prometheusa od bezpośredniego scrapowania aplikacji i pozwala na elastyczne przetwarzanie metryk przez Collector.
+
+#### **Przewodnik po Konfiguracji Systemu**
+
+Poniższe kroki przedstawiają kompletny proces instalacji i konfiguracji opisanego systemu telemetrii.
+
+1. **Instalacja Helm:**
+
+   ```Bash  
+   curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+   ```
+2. **Dodanie repozytorium Helm dla Prometheus Community:**
+
+   ```Bash  
+   helm repo add prometheus-community [https://prometheus-community.github.io/helm-charts](https://prometheus-community.github.io/helm-charts)
+
+    helm repo update
+    ```
+
+3. **Tworzenie przestrzeni nazw monitoring:**
+
+    ```Bash 
+    kubectl create namespace monitoring
+    ```
+     
+4. **Instalacja kube-prometheus-stack przy użyciu Helm:** Pakiet ten zawiera Prometheus, Grafanę i Alertmanager, a także inne komponenty Kubernetes do monitorowania. Grafana jest skonfigurowana do wystawiania na NodePort 30000 dla łatwego dostępu.
+
+   ```Bash  
+   helm install prometheus prometheus-community/kube-prometheus-stack \
+     --namespace monitoring \
+     --set grafana.service.type=NodePort \
+     --set grafana.service.nodePort=30000 \
+     --set prometheus.prometheusSpec.maximumStartupDurationSeconds=60
+     ```
+5. **Weryfikacja instalacji Prometheus:** Sprawdź, czy pody Prometheus są uruchomione.
+
+   ```Bash  
+   kubectl --namespace monitoring get pods -l "release=prometheus"
+   ```
+6. **Weryfikacja instalacji Grafany:** Sprawdź, czy pody Grafana są uruchomione.
+
+   ```Bash  
+   kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana
+   ```
+7. **Pobranie hasła administratora Grafany:**
+
+   ```Bash  
+   kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
+   ```
+
+![](images\OTel_password_guide_1.png)
+
+wynik polecenia służącego do pobrania i dekodowania hasła administratora Grafany
+
+8. **(Opcjonalnie) Wdrożenie OpenTelemetry Collector:** Poniższe komendy aplikują konfigurację Collectora, jego Deployment, Service, RBAC oraz ServiceMonitor. Należy upewnić się, że pliki YAML są wcześniej poprawione (np. port 8888 dla wewnętrznych metryk Collectora i prawidłowe uprawnienia RBAC).
+
+   ```Bash  
+   kubectl apply -f otel-collector/otel-collector-rbac.yaml  
+   kubectl apply -f otel-collector/otel-collector-configmap.yaml  
+   kubectl apply -f otel-collector/otel-collector-deployment.yaml  
+   kubectl apply -f otel-collector/otel-collector-config.yaml  
+   kubectl apply -f otel-collector/otel-collector-servicemonitor.yaml
+   ```
+
+Ten krok zakłada, że pliki YAML znajdujące się w otel-collector/ zostały wcześniej zaktualizowane i zawierają prawidłowe konfiguracje, w tym poprawne porty i uprawnienia.
+
+### **Wizualizacja i Weryfikacja Systemu Monitorowania**
+
+Poniższe zrzuty ekranu stanowią wizualne potwierdzenie poprawnego wdrożenia oraz funkcjonalności systemu telemetrii. Prezentują kluczowe aspekty od dostępu do interfejsów, przez status celów skrobania, aż po wizualizację zebranych metryk.
+
+![](images\OTel_example_grafana_1.png)
+Ten pulpit Grafany, również z Node Exporter, stosuje metodę USE (Utilization, Saturation, Errors) do zagregowanych metryk na poziomie całego klastra. Dostarcza szybkiego wglądu w ogólny stan wydajności i potencjalne problemy w klastrze  
+![](images\OTel_example_grafana_2.png)
+
+Pulpit Node Exporter w Grafanie, który wizualizuje metryki dotyczące zasobów dla każdego pojedynczego węzła w klastrze Kubernetes. Umożliwia monitorowanie zużycia CPU, pamięci i sieci dla poszczególnych maszyn.
+
+![](images\OTel_example_grafana_3.png)
+Pulpit nawigacyjny Grafany prezentujący ogólny przegląd stanu i wydajności serwera Prometheus. Wizualizuje kluczowe metryki działania samego systemu Prometheus.  
+![](images\OTel_example_prometeus_1.png)
+Ten widok z interfejsu użytkownika Prometheus przedstawia listę wszystkich celów (targets) monitorowania. Wskazuje ich status (UP/DOWN) oraz szczegóły skrobania, potwierdzając, czy Prometheus skutecznie zbiera metryki ze skonfigurowanych źródeł.
 
 ## **Opis Działania Aplikacji**
 
