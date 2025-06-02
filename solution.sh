@@ -61,13 +61,10 @@ then
 fi
 
 # Prompt for the Docker registry details
-echo ""
-echo "📝 Please provide the details of your Container registry to install the Camel-K."
-read -p "🔑 Enter the registry hostname (e.g., docker.io or quay.io): " REGISTRY_HOST
-read -p "🔑 Enter the registry username: " REGISTRY_USER
-read -s -p "🔑 Enter the registry password: " REGISTRY_PASSWORD
-echo ""
-echo "✅ All the required details have been captured and saved locally."
+
+REGISTRY_HOST=docker.io
+REGISTRY_USER=""
+REGISTRY_PASSWORD=""
 
 # Set the registry details as environment variables
 export REGISTRY_HOST=$REGISTRY_HOST
@@ -110,7 +107,6 @@ echo "✅ OpenTelemetry Collector restarted and ready."
 # Install the Sample Bookstore App
 echo ""
 echo "📚 Installing the Sample Bookstore App..."
-read -p "🛑 Press ENTER to continue..."
 
 # Install the front end first
 echo ""
@@ -128,7 +124,14 @@ echo "✅ Bookstore Frontend installed."
 # Prompt the user to check the frontend
 echo ""
 echo "✅ The frontend is now installed. Please visit http://localhost:3000 to view the bookstore frontend."
-echo "⚠️ If you cannot access the frontend, please open a new terminal and run 'kubectl port-forward svc/bookstore-frontend-svc 3000:3000' to forward the port to your localhost."
+kubectl port-forward svc/bookstore-frontend-svc 3000:3000 &
+# echo error or ok based on the exit code of the previous command
+if [ $? -eq 0 ]; then
+    echo "✅ Successfully forwarded port 3000 to localhost."
+else
+    echo "⚠️ Failed to forward port 3000. Please check your Kubernetes setup."
+    echo "⚠️ If you cannot access the frontend, please open a new terminal and run 'kubectl port-forward svc/bookstore-frontend-svc 3000:3000' to forward the port to your localhost."
+fi
 read -p '🛑 Can you see the front end page? If yes, press ENTER to continue...'
 
 # Install the node-server
@@ -147,9 +150,16 @@ echo "✅ Bookstore Backend (node-server) installed."
 # Prompt the user to check the backend
 echo ""
 echo "✅ The node-server is now installed. Please visit http://localhost:8080 to view the bookstore node-server."
-echo "⚠️ If you cannot access it, please run 'kubectl port-forward svc/node-server-svc 8080:80' to forward the port to your localhost."
+echo "running 'kubectl port-forward svc/node-server-svc 8080:80'"
+kubectl port-forward svc/node-server-svc 8080:80 &
+# echo error or ok based on the exit code of the previous command
+if [ $? -eq 0 ]; then
+    echo "✅ Successfully forwarded port 8080 to localhost."
+else
+    echo "⚠️ Failed to forward port 8080. Please check your Kubernetes setup."
+    echo "⚠️ If you cannot access the backend, please open a new terminal and run 'kubectl port-forward svc/node-server-svc 8080:80' to forward the port to your localhost."
+fi
 read -p '🛑 Can you see "Hello World!"? If yes, press ENTER to continue...'
-
 # Deploy the ML services
 echo ""
 echo "📦 Deploying the ML service: bad-word-filter..."
