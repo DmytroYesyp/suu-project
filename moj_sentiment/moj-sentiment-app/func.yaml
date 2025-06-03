@@ -1,0 +1,10 @@
+# $schema: https://raw.githubusercontent.com/knative/func/refs/tags/v0.36.0/schema/func_yaml-schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/knative/func/refs/tags/v0.36.0/schema/func_yaml-schema.json
+specVersion: 0.36.0
+name: moj-sentiment-app
+runtime: python
+registry: dev.local/moj-sentiment-app
+image: moj-sentiment-app-5
+created: 2025-05-27T20:59:32.252938961+02:00
+build:
+  builder: s2i
