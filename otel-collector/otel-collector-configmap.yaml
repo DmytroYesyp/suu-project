@@ -37,13 +37,27 @@ data:
                   target_label: instance
                   replacement: ${1}:${2}
 
+            - job_name: 'postgres-exporter'
+              static_configs:
+                - targets: ['postgres-exporter.default.svc.cluster.local:9187']
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_name]
+                  target_label: kubernetes_pod_name
+                - source_labels: [__meta_kubernetes_namespace]
+                  target_label: kubernetes_namespace
+                - source_labels: [__meta_kubernetes_pod_container_name]
+                  target_label: container_name
+                - source_labels: [__address__]
+                  regex: '(.+):(\d+)'
+                  replacement: '${1}'
+                  target_label: instance
+
     processors:
       batch:
 
     exporters:
-      # Експортуємо метрики до Prometheus Remote Write
       prometheusremotewrite:
-        endpoint: "http://prometheus-kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+        endpoint: "http://prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
       logging:
         verbosity: detailed
 
@@ -56,4 +70,4 @@ data:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [logging] 
+          exporters: [logging]

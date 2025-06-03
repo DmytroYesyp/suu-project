@@ -90,6 +90,9 @@ kubectl apply -f otel-collector/otel-collector-configmap.yaml
 kubectl apply -f otel-collector/otel-collector-deployment.yaml
 kubectl apply -f otel-collector/otel-collector-config.yaml
 kubectl apply -f otel-collector/otel-collector-servicemonitor.yaml
+
+kubectl apply -f otel-collector/prometheus-deployment.yaml
+kubectl apply -f otel-collector/grafana.yaml
 echo "✅ OpenTelemetry Collector components deployed."
 
 echo ""
