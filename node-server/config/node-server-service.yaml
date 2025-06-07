@@ -1,0 +1,15 @@
+# node-server-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-server
+  labels:
+    app: node-server
+spec:
+  selector:
+    app: node-server
+  ports:
+    - name: metrics
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
