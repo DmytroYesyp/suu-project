@@ -177,6 +177,13 @@ cd ..
 kubectl apply -f db-service
 echo "✅ Database installed."
 
+cd file-sink
+eval $(minikube docker-env)
+docker build -t file-sink:latest .
+docker tag file-sink:latest dev.local/file-sink:latest
+kn service apply file-sink --image=dev.local/file-sink --pull-policy=Never
+cd -
+
 read -p '🛑 Instalacja sekwencji. Upewnij się byczku, że file-sink już działa i ma się dobrze.'
 
 # Install the sequence
