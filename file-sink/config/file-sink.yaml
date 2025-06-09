@@ -10,7 +10,7 @@ spec:
         "container.applinks.io/skipImagePull": "true"
     spec:
       containers:
-        - image: file-sink:latest
+        - image: dev.local/file-sink:latest
           volumeMounts:
             - name: data
               mountPath: /data
