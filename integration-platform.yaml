@@ -6,7 +6,6 @@ metadata:
 spec:
   profile: Knative
   build:
-    strategy: pod           # <-- DODANE TUTAJ
     registry:
       address: docker.io
       organization: tigerteam
