@@ -60,6 +60,10 @@ data:
         endpoint: "http://prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
       logging:
         verbosity: detailed
+      otlp/jaeger:
+        endpoint: jaeger-collector.monitoring.svc.cluster.local:4317
+        tls:
+          insecure: true
 
     service:
       pipelines:
@@ -70,4 +74,4 @@ data:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [logging]
+          exporters: [otlp/jaeger, logging]

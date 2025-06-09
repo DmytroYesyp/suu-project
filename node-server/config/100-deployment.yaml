@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: node-server
-        image: node-server:latest
-        imagePullPolicy: Never
+        image: node-server:v1.53
+        imagePullPolicy: IfNotPresent 
         ports:
         - containerPort: 8000
 ---

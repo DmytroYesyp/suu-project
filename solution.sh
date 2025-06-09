@@ -144,8 +144,8 @@ echo ""
 echo "📦 Installing the Sample Bookstore Backend (node-server)..."
 cd ../node-server
 
-docker build -t node-server:latest .
-minikube image load node-server:latest
+docker build -t node-server:v1.53 .
+minikube image load node-server:v1.53
 
 kubectl apply -f config
 
