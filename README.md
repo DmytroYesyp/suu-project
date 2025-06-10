@@ -423,7 +423,24 @@ Wykonujemy ewentualne polecenia wypisane przez skrypt.
 
 # Uruchamianie demo
 
-TODO gdzie jest front, gdzie jest backend, co sie dzieje jak dodaje się komentarz
+1. **Frontend**  
+   Frontend aplikacji jest dostępny pod http://localhost:3000/
+
+2. **Backend**  
+   Prosty test backendu można zoabaczyć pod http://localhost:8080/
+
+3. **Dodawanie komentarza**  
+   Po wejściu na stronę frontendu użytkownik może dodać komentarz do książki. Komentarz trafia do backendu, a następnie jako CloudEvent do brokera Knative. Broker przekazuje zdarzenie do usługi `file-sink` która zapisuje wiadomość do pliku lokalnego. W przypadku błędów (symulowanych w `file-sink`) zdarzenie trafia do `dead-letter-logger` gdzie również jest zapisywane do pliku.
+
+4. **Weryfikacja działania usług**  
+   - Aby sprawdzić, jakie zdarzenia otrzymał `file-sink`, użyj polecenia:
+     ```bash
+     kubectl exec -it <file-sink-pod-name> -- cat /data/events.log
+     ```
+   - Aby sprawdzić, jakie zdarzenia otrzymał `dead-letter-logger`, użyj polecenia:
+     ```bash
+     kubectl exec -it <dead-letter-logger-pod-name> -- cat /data/events.log
+     ```
 
 # Użycie AI
 
