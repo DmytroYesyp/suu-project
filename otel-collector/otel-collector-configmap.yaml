@@ -37,6 +37,29 @@ data:
                   target_label: instance
                   replacement: ${1}:${2}
 
+            - job_name: 'file-sink'
+              kubernetes_sd_configs:
+                - role: endpoints
+                  namespaces:
+                    names: ["default"]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_service_label_app]
+                  action: keep
+                  regex: file-sink
+                - source_labels: [__meta_kubernetes_endpoint_port_name]
+                  action: keep
+                  regex: metrics
+                - source_labels: [__meta_kubernetes_namespace]
+                  action: replace
+                  target_label: kubernetes_namespace
+                - source_labels: [__meta_kubernetes_pod_name]
+                  action: replace
+                  target_label: kubernetes_pod_name
+                - source_labels: [__address__]
+                  regex: (.+):(\d+)
+                  target_label: instance
+                  replacement: ${1}:${2}
+
             - job_name: 'postgres-exporter'
               static_configs:
                 - targets: ['postgres-exporter.default.svc.cluster.local:9187']

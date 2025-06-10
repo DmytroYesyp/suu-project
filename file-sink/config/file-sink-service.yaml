@@ -1,0 +1,15 @@
+# file-sink-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-sink
+  labels:
+    app: file-sink
+spec:
+  selector:
+    app: file-sink
+  ports:
+    - name: metrics
+      port: 8123
+      targetPort: 8123
+      protocol: TCP
