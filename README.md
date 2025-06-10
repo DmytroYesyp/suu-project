@@ -144,83 +144,36 @@ System jest skonfigurowany do monitorowania dwóch głównych źródeł metryk:
 1. **Sam OpenTelemetry Collector**: Prometheus aktywnie skrobie metryki zdrowia i wydajności samego Collectora, zapewniając wgląd w jego działanie.  
 2. **Serwis node-server**: OpenTelemetry Collector skrobie metryki wystawiane przez serwis, a następnie przesyła je do Prometheusa. Ten model odciąża Prometheusa od bezpośredniego scrapowania aplikacji i pozwala na elastyczne przetwarzanie metryk przez Collector.
 
-#### **Przewodnik po Konfiguracji Systemu**
-
-Poniższe kroki przedstawiają kompletny proces instalacji i konfiguracji opisanego systemu telemetrii.
-
-1. **Instalacja Helm:**
-
-   ```Bash  
-   curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-   ```
-2. **Dodanie repozytorium Helm dla Prometheus Community:**
-
-   ```Bash  
-   helm repo add prometheus-community [https://prometheus-community.github.io/helm-charts](https://prometheus-community.github.io/helm-charts)
-
-    helm repo update
-    ```
-
-3. **Tworzenie przestrzeni nazw monitoring:**
-
-    ```Bash 
-    kubectl create namespace monitoring
-    ```
-     
-4. **Instalacja kube-prometheus-stack przy użyciu Helm:** Pakiet ten zawiera Prometheus, Grafanę i Alertmanager, a także inne komponenty Kubernetes do monitorowania. Grafana jest skonfigurowana do wystawiania na NodePort 30000 dla łatwego dostępu.
-
-   ```Bash  
-   helm install prometheus prometheus-community/kube-prometheus-stack \
-     --namespace monitoring \
-     --set grafana.service.type=NodePort \
-     --set grafana.service.nodePort=30000 \
-     --set prometheus.prometheusSpec.maximumStartupDurationSeconds=60
-     ```
-5. **Weryfikacja instalacji Prometheus:** Sprawdź, czy pody Prometheus są uruchomione.
-
-   ```Bash  
-   kubectl --namespace monitoring get pods -l "release=prometheus"
-   ```
-6. **Weryfikacja instalacji Grafany:** Sprawdź, czy pody Grafana są uruchomione.
-
-   ```Bash  
-   kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana
-   ```
-7. **Pobranie hasła administratora Grafany:**
-
-   ```Bash  
-   kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
-   ```
-
-![](images\OTel_password_guide_1.png)
-
-wynik polecenia służącego do pobrania i dekodowania hasła administratora Grafany
-
-8. **(Opcjonalnie) Wdrożenie OpenTelemetry Collector:** Poniższe komendy aplikują konfigurację Collectora, jego Deployment, Service, RBAC oraz ServiceMonitor. Należy upewnić się, że pliki YAML są wcześniej poprawione (np. port 8888 dla wewnętrznych metryk Collectora i prawidłowe uprawnienia RBAC).
-
-   ```Bash  
-   kubectl apply -f otel-collector/otel-collector-rbac.yaml  
-   kubectl apply -f otel-collector/otel-collector-configmap.yaml  
-   kubectl apply -f otel-collector/otel-collector-deployment.yaml  
-   kubectl apply -f otel-collector/otel-collector-config.yaml  
-   kubectl apply -f otel-collector/otel-collector-servicemonitor.yaml
-   ```
-
-Ten krok zakłada, że pliki YAML znajdujące się w otel-collector/ zostały wcześniej zaktualizowane i zawierają prawidłowe konfiguracje, w tym poprawne porty i uprawnienia.
-
 ### **Wizualizacja i Weryfikacja Systemu Monitorowania**
 
 Poniższe zrzuty ekranu stanowią wizualne potwierdzenie poprawnego wdrożenia oraz funkcjonalności systemu telemetrii. Prezentują kluczowe aspekty od dostępu do interfejsów, przez status celów skrobania, aż po wizualizację zebranych metryk.
 
+![](images\OTel_otel-collector_console_1.png)
+
+Ten zrzut ekranu przedstawia fragment logów z kontenera OpenTelemetry Collector, uruchomionego w konsoli (najprawdopodobniej za pomocą `kubectl logs`)
+
+![](images\OTel_prometheus_data_access_test_1.png)
+
+Ten zrzut ekranu przedstawia widok interfejsu użytkownika Prometheus (zakładka "Graph" lub "Table"), wyświetlający konkretną metrykę pochodzącą z bazy danych PostgreSQL, która została zebrana przez `postgres-exporter`, przetworzona przez OpenTelemetry Collector i przesłana do Prometheus.
+
+![](images\OTel_grafana_node-server_visualtisation_1.png)
+
+Ten zrzut ekranu przedstawia panel nawigacyjny w Grafanie, który wizualizuje metryki serwera (nody). Metryki te są najprawdopodobniej zbierane przez Node Exporter. 
+
 ![](images\OTel_example_grafana_1.png)
+
 Ten pulpit Grafany, również z Node Exporter, stosuje metodę USE (Utilization, Saturation, Errors) do zagregowanych metryk na poziomie całego klastra. Dostarcza szybkiego wglądu w ogólny stan wydajności i potencjalne problemy w klastrze  
+
 ![](images\OTel_example_grafana_2.png)
 
 Pulpit Node Exporter w Grafanie, który wizualizuje metryki dotyczące zasobów dla każdego pojedynczego węzła w klastrze Kubernetes. Umożliwia monitorowanie zużycia CPU, pamięci i sieci dla poszczególnych maszyn.
 
 ![](images\OTel_example_grafana_3.png)
+
 Pulpit nawigacyjny Grafany prezentujący ogólny przegląd stanu i wydajności serwera Prometheus. Wizualizuje kluczowe metryki działania samego systemu Prometheus.  
+
 ![](images\OTel_example_prometeus_1.png)
+
 Ten widok z interfejsu użytkownika Prometheus przedstawia listę wszystkich celów (targets) monitorowania. Wskazuje ich status (UP/DOWN) oraz szczegóły skrobania, potwierdzając, czy Prometheus skutecznie zbiera metryki ze skonfigurowanych źródeł.
 
 ## **Opis Działania Aplikacji**

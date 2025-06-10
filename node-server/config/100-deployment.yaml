@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: node-server
-        image: ghcr.io/knative/node-server:latest
+        image: node-server:v1.53
+        imagePullPolicy: IfNotPresent 
         ports:
         - containerPort: 8000
 ---

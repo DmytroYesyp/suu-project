@@ -85,11 +85,16 @@ echo "✅ Camel-K installed successfully."
 
 echo ""
 echo "⚙️ Deploying OpenTelemetry Collector components..."
+kubectl create namespace monitoring
+
 kubectl apply -f otel-collector/otel-collector-rbac.yaml
 kubectl apply -f otel-collector/otel-collector-configmap.yaml
 kubectl apply -f otel-collector/otel-collector-deployment.yaml
 kubectl apply -f otel-collector/otel-collector-config.yaml
 kubectl apply -f otel-collector/otel-collector-servicemonitor.yaml
+
+kubectl apply -f otel-collector/prometheus-deployment.yaml
+kubectl apply -f otel-collector/grafana.yaml
 echo "✅ OpenTelemetry Collector components deployed."
 
 echo ""
@@ -138,6 +143,10 @@ read -p '🛑 Can you see the front end page? If yes, press ENTER to continue...
 echo ""
 echo "📦 Installing the Sample Bookstore Backend (node-server)..."
 cd ../node-server
+
+docker build -t node-server:v1.53 .
+minikube image load node-server:v1.53
+
 kubectl apply -f config
 
 # Wait for the backend to be ready
@@ -161,17 +170,17 @@ else
 fi
 read -p '🛑 Can you see "Hello World!"? If yes, press ENTER to continue...'
 # Deploy the ML services
-echo ""
-echo "📦 Deploying the ML service: bad-word-filter..."
-cd ../ML-bad-word-filter
-func deploy -b=s2i -v
-echo "✅ ML service bad-word-filter deployed."
+# echo ""
+# echo "📦 Deploying the ML service: bad-word-filter..."
+# cd ../ML-bad-word-filter
+# func deploy -b=s2i -v
+# echo "✅ ML service bad-word-filter deployed."
 
-echo ""
-echo "📦 Deploying the ML services: sentiment-analysis..."
-cd ../ML-sentiment-analysis
-func deploy -b=s2i -v
-echo "✅ ML service sentiment-analysis deployed."
+# echo ""
+# echo "📦 Deploying the ML services: sentiment-analysis..."
+# cd ../ML-sentiment-analysis
+# func deploy -b=s2i -v
+# echo "✅ ML service sentiment-analysis deployed."
 
 # Install the database
 echo ""
