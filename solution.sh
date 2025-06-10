@@ -184,6 +184,13 @@ docker tag file-sink:latest dev.local/file-sink:latest
 kn service apply file-sink --image=dev.local/file-sink --pull-policy=Never
 cd -
 
+cd dead-letter-logger
+eval $(minikube docker-env)
+docker build -t dead-letter-logger:latest .
+docker tag dead-letter-logger:latest dev.local/dead-letter-logger:latest
+kn service apply dead-letter-logger --image=dev.local/dead-letter-logger --pull-policy=Never
+cd -
+
 read -p '🛑 Instalacja sekwencji. Upewnij się byczku, że file-sink już działa i ma się dobrze.'
 
 # Install the sequence
