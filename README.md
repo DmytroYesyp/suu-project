@@ -1,15 +1,16 @@
-# Knative \- OTel
+Knative \- OTel
+==============
 
 [GoogleDocs](https://docs.google.com/document/d/1zVsoGiIb50rPzTMCSIOD62AAp-FyuXdTZhBHDyCoWtY/edit?tab=t.0)
 
 
-## Jan Chyczyński, Kacper Kozak, Dmytro Yesyp, Bartłomiej Słupik
+**Jan Chyczyński, Kacper Kozak, Dmytro Yesyp, Bartłomiej Słupik**
 
-## Wprowadzenie
+# Wprowadzenie
 
 Ten projekt demonstruje praktyczne zastosowanie Knative na przykładzie zmodyfikowanej aplikacji Bookstore – prostej księgarni internetowej działającej w architekturze event-driven. Aplikacja została rozszerzona o mechanizmy obsługi błędów, takie jak retry i dead letter sink, oraz zintegrowana z OpenTelemetry i Grafaną w celu monitorowania przepływu zdarzeń. Projekt ilustruje kluczowe cechy Knative, takie jak przetwarzanie zdarzeń, elastyczne skalowanie oraz niezawodna obsługa niepowodzeń, dając jednocześnie wgląd w działanie systemu dzięki wizualizacji metryk i śledzeniu zdarzeń w czasie rzeczywistym.
 
-## Podstawy teoretyczne i opis stosu technologicznego
+# Podstawy teoretyczne i opis stosu technologicznego
 
 Knative to system, który pomaga deweloperom w zarządzaniu i utrzymywaniu procesów w Kubernetes. Jego celem jest uproszczenie, zautomatyzowanie i monitorowanie wdrożeń w Kubernetes, aby zespoły spędzały mniej czasu na konserwacji, a więcej na tworzeniu aplikacji i realizacji projektów. Knative przejmuje powtarzalne i czasochłonne zadania, eliminując wąskie gardła i opóźnienia.
 
@@ -36,7 +37,7 @@ Knative posiada również wbudowane mechanizmy obsługi błędów, które zwięk
 
 Projekt oparty jest na Kubernetes i wykorzystuje Knative do zarządzania usługami i przetwarzania zdarzeń w architekturze event-driven. Backend aplikacji zbudowany jest w Node.js, interfejs użytkownika w Next.js, a dane przechowywane są w PostgreSQL. Przetwarzanie komentarzy realizują funkcje Knative wykorzystujące modele ML do analizy sentymentu i filtrowania treści. Do monitorowania systemu zastosowano OpenTelemetry oraz Grafanę, umożliwiając wizualizację przepływu zdarzeń i metryk związanych z obsługą błędów.
 
-## Koncepcja projektu
+# Koncepcja projektu
 
 [Knative Bookstore Code Samples: GitHub Aplikacja Bookstore](https://github.com/knative/docs/tree/main/code-samples/eventing/bookstore-sample-app/solution)
 
@@ -67,110 +68,64 @@ Opis katalogu „solution” przykładowej aplikacji Knative Bookstore – w pe�
 
 ![](images/image1.png)
 
-Architektura Systemu
+## Modyfikacja aplikacji Bookstore (Knative Eventing)
 
-# Opis konfiguracji środowiska
+W ramach naszego projektu dokonamy rozszerzenia aplikacji demonstracyjnej Bookstore, opartej na architekturze event-driven z wykorzystaniem Knative. Głównym celem tej modyfikacji jest zaprezentowanie mechanizmów obsługi błędów w systemie przesyłania zdarzeń, takich jak ponowne próby (retry) i obsługa zdarzeń niedostarczalnych (dead-letter sink – DLS). Dodamy też observability w postaci Grafany połączonej przez Prometheus z OpenTelemetry.
 
-## **Konfiguracja Środowiska i Uruchomienie Aplikacji (Minikube, Knative, Camel K)**
+1. **Symulacja błędów w usłudze Slack Sink:**
 
-Prezentowane demo zostało wdrożone na **lokalnym klastrze Kubernetesa** przy użyciu **Minikube**. 
+   * Wprowadzimy losową awaryjność (np. zwracanie błędu HTTP 500\) w komponencie slack-sink, który odpowiada za wysyłkę powiadomień do Slacka.
 
-### **1\. Instalacja WSL i Ubuntu 20.04**
+   * Celem jest wymuszenie sytuacji, w których zdarzenia nie są poprawnie przetwarzane.
 
-W przypadku pracy na systemie operacyjnym Windows, pierwszym krokiem jest instalacja **Windows Subsystem for Linux (WSL)** wraz z dystrybucją **Ubuntu 20.04**. Proces instalacji realizowany jest za pomocą poniższego polecenia:
+2. **Dodanie mechanizmu Dead Letter Sink:**
 
-```bash  
-wsl \--install Ubuntu-20.04  
-```
+   * Utworzymy osobny komponent (Knative Service), który będzie odbiorcą zdarzeń, które nie zostały pomyślnie dostarczone po określonej liczbie prób.
 
-### **2\. Instalacja Minikube**
+   * Zostanie on przypisany jako deadLetterSink w konfiguracji brokera (lub triggera).
 
-Minikube pełni rolę lokalnego klastra Kubernetes. Poniżej przedstawiono dwie metody instalacji:
+3. **Konfiguracja polityki retry i backoff:**
 
-#### Metoda 1: Instalacja bezpośrednia (dla systemów Linux)
+   * Skonfigurujemy parametry retry w Knative Eventing (liczbę prób, politykę opóźnień).
 
-```bash  
-curl \-LO https://storage.googleapis.com/minikube/releases/latest/minikube\_latest\_amd64.deb  
-sudo dpkg \-i minikube\_latest\_amd64.deb  
-```
+   * Umożliwi to demonstrację automatycznego ponawiania dostarczania zdarzeń w przypadku niepowodzenia.
 
-#### Metoda 2: Instalacja na WSL2 (zalecana dla środowiska Windows) 
+4. **Obserwowalność i monitoring:**
 
-Dla użytkowników WSL2 zaleca się zapoznanie się ze szczegółowym przewodnikiem instalacji dostępnym pod adresem: \[Kubernetes Setup with Minikube on WSL2\](https://gaganmanku96.medium.com/kubernetes-setup-with-minikube-on-wsl2-2023-a58aea81e6a3). 
+   * Wdrożymy eksportery OpenTelemetry w kluczowych komponentach.
 
-### **3\. Instalacja Knative Client (kn)** 
+   * Dzięki temu możliwa będzie analiza tras zdarzeń, czasów przetwarzania, liczby prób oraz przypadków przekierowania do DLS.
 
-Knative Client (\`kn\`) to narzędzie wiersza poleceń służące do zarządzania komponentami Knative. Instalacja odbywa się poprzez następujące komendy: 
 
-```bash   
-wget https://github.com/knative/client/releases/download/knative-v1.18.0/kn-linux-amd64   
-mv kn-linux-amd64   
-kn chmod \+x kn   
-sudo mv kn /usr/local/bin   
-kn version  
-```
+### **Wykorzystanie Kameleta do symulacji błędów i obsługi przez Dead Letter Sink**
 
-### **4\. Instalacja Knative Quickstart Plugin (kn-quickstart)**
+Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie celowe odrzucanie części wiadomości. Celem jest wygenerowanie błędów dostarczania, które trafią następnie do Dead Letter Sink (DLS), gdzie zostaną przekazane do OpenTEL w celu zwizualizowania ich w Grafanie.
 
-Plugin kn-quickstart ułatwia proces konfiguracji środowiska Knative. Sposób instalacji przedstawiono poniżej:
+#### **Mechanizm działania:**
 
-```bash   
-wget https://github.com/knative-extensions/kn-plugin-quickstart/releases/download/knative-v1.18.0/kn-quickstart-linux-amd64  
-mv kn-quickstart-linux-amd64 kn-quickstart  
-sudo mv kn-quickstart /usr/local/bin  
-kn quickstart \--help  
-```
+1. Kamelet zostanie zaimplementowany jako konsument wiadomości (sink), który jako odpowiedź na co 5 wiadomość zwraca wyjątek..
 
-### 5\. Tworzenie Klastra Knative za pomocą kn quickstart
+2. W przypadku zwrócenia wyjątku przez Kameleta, Knative Eventing automatycznie podejmieł próbę ponownego dostarczenia wiadomości zgodnie z polityką *retry*.
 
-Do szybkiego utworzenia i skonfigurowania klastra z zainstalowanym Knative należy użyć komendy kn quickstart:
+3. Po przekroczeniu limitu prób, wiadomość zostanie przekierowana do wcześniej zdefiniowanego *Dead Letter Logger*, którym będzie osobny Knative Service odpowiedzialny za logowanie błędów. Odwołanie do tego serwisu będzie zdefiniowane jako *deadLetterSink* brokera *badword-broker (slack-sink/config/100-broker.yaml).*
 
-```bash   
-kn quickstart minikube  
-```
+4. DLS przekaże informacje o nieudanych zdarzeniach do Grafany za pośrednictwem zintegrowanego systemu monitoringu w standardzie Open Telemetry.
 
-**Należy postępować zgodnie z instrukcjami wyświetlanymi przez skrypt podczas jego wykonywania.**
+![](images/image3.png)
 
-W celu walidacji poprawności utworzenia klastra, można wykorzystać komendę:
 
-```bash   
-minikube profile list  
-```
+# Architektura Rozwiązania
 
-### 6\. [Instalacja func cli](https://knative.dev/docs/functions/install-func/#installing-the-func-cli)
+### ![](images/image2.png)
 
-func CLI jest narzędziem wspierającym pracę z Knative Functions. Jego instalacja przebiega w następujący sposób:
 
-```bash  
-wget https://github.com/knative/func/releases/download/knative-v1.18.1/func_linux_amd64
-mv func_linux_amd64 func
-chmod +x func
-sudo mv func /usr/local/bin
-func version
-```
+Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
 
-### **7\. [Instalacja Apache Camel K (kamel)](https://downloads.apache.org/camel/camel-k/2.6.0/)**
+## Implementacja modyfikacji aplikacji Bookstore
 
-Apache Camel K to rozwiązanie Serverless do integracji, zaprojektowane do działania natywnie w środowisku Kubernetes. Instalacja klienta kamel realizowana jest poprzez:
+TODO
 
-```bash   
-wget [https://downloads.apache.org/camel/camel-k/2.6.0/camel-k-client-2.6.0-linux-amd64.tar.gz](https://downloads.apache.org/camel/camel-k/2.6.0/camel-k-client-2.6.0-linux-amd64.tar.gz)  
-tar \-xvzf camel-k-client-2.6.0-linux-amd64.tar.gz   
-sudo mv kamel /usr/local/bin/   
-chmod \+x /usr/local/bin/kamel   
-kamel version   
-```
-
-### 8\. Uruchomienie aplikacji
-
-Przed uruchomieniem skryptu należy zainstalować wszystkie wymagane komponenty opisane w rozdziale **„Konfiguracja i Wdrożenie Systemu Telemetrii”**. Dopiero po ich poprawnej instalacji można przystąpić do uruchomienia aplikacji według poniższych kroków:
-
-```bash  
-./solution.sh
-```  
-Wykonujemy ewentualne polecenia wypisane przez skrypt.
-
-### **Konfiguracja i Wdrożenie Systemu Telemetrii**
+## **Konfiguracja i Wdrożenie Systemu Telemetrii**
 
 Sekcja szczegółowo opisuje proces konfiguracji i wdrożenia kompleksowego systemu telemetrii w środowisku Kubernetes, wykorzystującego Prometheus, Grafanę oraz OpenTelemetry Collector. Celem jest zbieranie metryk zarówno z komponentów systemu, jak i z aplikacyjnych punktów końcowych, w szczególności z serwisu Node.js.
 
@@ -285,93 +240,99 @@ Powyższy zrzut ekranu prezentuje poprawnie uruchomiony interfejs użytkownika (
 
 Powyższy zrzut ekranu prezentuje poprawnie uruchomiony backendu aplikacji. 
 
-## Modyfikacja aplikacji Bookstore (Knative Eventing)
 
-W ramach naszego projektu dokonamy rozszerzenia aplikacji demonstracyjnej Bookstore, opartej na architekturze event-driven z wykorzystaniem Knative. Głównym celem tej modyfikacji jest zaprezentowanie mechanizmów obsługi błędów w systemie przesyłania zdarzeń, takich jak ponowne próby (retry) i obsługa zdarzeń niedostarczalnych (dead-letter sink – DLS). Dodamy też observability w postaci Grafany połączonej przez Prometheus z OpenTelemetry.
+# Opis konfiguracji środowiska
 
-1. **Symulacja błędów w usłudze Slack Sink:**
+## **Konfiguracja Środowiska i Uruchomienie Aplikacji (Minikube, Knative, Camel K)**
 
-   * Wprowadzimy losową awaryjność (np. zwracanie błędu HTTP 500\) w komponencie slack-sink, który odpowiada za wysyłkę powiadomień do Slacka.
+Prezentowane demo zostało wdrożone na **lokalnym klastrze Kubernetesa** przy użyciu **Minikube**. 
 
-   * Celem jest wymuszenie sytuacji, w których zdarzenia nie są poprawnie przetwarzane.
+### **1\. Instalacja WSL i Ubuntu 20.04**
 
-2. **Dodanie mechanizmu Dead Letter Sink:**
+W przypadku pracy na systemie operacyjnym Windows, pierwszym krokiem jest instalacja **Windows Subsystem for Linux (WSL)** wraz z dystrybucją **Ubuntu 20.04**. Proces instalacji realizowany jest za pomocą poniższego polecenia:
 
-   * Utworzymy osobny komponent (Knative Service), który będzie odbiorcą zdarzeń, które nie zostały pomyślnie dostarczone po określonej liczbie prób.
-
-   * Zostanie on przypisany jako deadLetterSink w konfiguracji brokera (lub triggera).
-
-3. **Konfiguracja polityki retry i backoff:**
-
-   * Skonfigurujemy parametry retry w Knative Eventing (liczbę prób, politykę opóźnień).
-
-   * Umożliwi to demonstrację automatycznego ponawiania dostarczania zdarzeń w przypadku niepowodzenia.
-
-4. **Obserwowalność i monitoring:**
-
-   * Wdrożymy eksportery OpenTelemetry w kluczowych komponentach.
-
-   * Dzięki temu możliwa będzie analiza tras zdarzeń, czasów przetwarzania, liczby prób oraz przypadków przekierowania do DLS.
-
-### ![](images/image2.png)
-
-
-Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
-
-### 
-
-### **Wykorzystanie Kameleta do symulacji błędów i obsługi przez Dead Letter Sink**
-
-Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie celowe odrzucanie części wiadomości. Celem jest wygenerowanie błędów dostarczania, które trafią następnie do Dead Letter Sink (DLS), gdzie zostaną przekazane do OpenTEL w celu zwizualizowania ich w Grafanie.
-
-#### **Mechanizm działania:**
-
-1. Kamelet zostanie zaimplementowany jako konsument wiadomości (sink), który jako odpowiedź na co 5 wiadomość zwraca wyjątek..
-
-2. W przypadku zwrócenia wyjątku przez Kameleta, Knative Eventing automatycznie podejmieł próbę ponownego dostarczenia wiadomości zgodnie z polityką *retry*.
-
-3. Po przekroczeniu limitu prób, wiadomość zostanie przekierowana do wcześniej zdefiniowanego *Dead Letter Logger*, którym będzie osobny Knative Service odpowiedzialny za logowanie błędów. Odwołanie do tego serwisu będzie zdefiniowane jako *deadLetterSink* brokera *badword-broker (slack-sink/config/100-broker.yaml).*
-
-4. DLS przekaże informacje o nieudanych zdarzeniach do Grafany za pośrednictwem zintegrowanego systemu monitoringu w standardzie Open Telemetry.
-
-![](images/image3.png)
-
-## Implementacja modyfikacji aplikacji Bookstore
-
-### Niestabilny serwis "slack-sink"
-unstable-slack-sink.kamalet.yaml
-```
-apiVersion: camel.apache.org/v1
-kind: Kamelet
-```
-(...)
-```
-  template:
-    from:
-      uri: "kamelet:source"
-      steps:
-        - choice:
-            when:
-              - expression:
-                  simple: "${random(1,5)} == 1"
-                steps:
-                  - log:
-                      message: "Simulated failure"
-                  - throwException:
-                      exceptionType: "java.lang.RuntimeException"
-                      message: "Random simulated Slack failure"
-            otherwise:
-              steps:
-                - set-header:
-                    name: Content-Type
-                    constant: application/json
-                - marshal:
-                    json:
-                      library: Jackson
-                - toD: "https://{{webhookUrl}}"
+```bash  
+wsl \--install Ubuntu-20.04  
 ```
 
-### **Podział zadań**
+### **2\. Instalacja Minikube**
+
+Minikube pełni rolę lokalnego klastra Kubernetes. Poniżej przedstawiono dwie metody instalacji:
+
+#### Metoda 1: Instalacja bezpośrednia (dla systemów Linux)
+
+```bash  
+curl \-LO https://storage.googleapis.com/minikube/releases/latest/minikube\_latest\_amd64.deb  
+sudo dpkg \-i minikube\_latest\_amd64.deb  
+```
+
+#### Metoda 2: Instalacja na WSL2 (zalecana dla środowiska Windows) 
+
+Dla użytkowników WSL2 zaleca się zapoznanie się ze szczegółowym przewodnikiem instalacji dostępnym pod adresem: \[Kubernetes Setup with Minikube on WSL2\](https://gaganmanku96.medium.com/kubernetes-setup-with-minikube-on-wsl2-2023-a58aea81e6a3). 
+
+### **3\. Instalacja Knative Client (kn)** 
+
+Knative Client (\`kn\`) to narzędzie wiersza poleceń służące do zarządzania komponentami Knative. Instalacja odbywa się poprzez następujące komendy: 
+
+```bash   
+wget https://github.com/knative/client/releases/download/knative-v1.18.0/kn-linux-amd64   
+mv kn-linux-amd64   
+kn chmod \+x kn   
+sudo mv kn /usr/local/bin   
+kn version  
+```
+
+### **4\. Instalacja Knative Quickstart Plugin (kn-quickstart)**
+
+Plugin kn-quickstart ułatwia proces konfiguracji środowiska Knative. Sposób instalacji przedstawiono poniżej:
+
+```bash   
+wget https://github.com/knative-extensions/kn-plugin-quickstart/releases/download/knative-v1.18.0/kn-quickstart-linux-amd64  
+mv kn-quickstart-linux-amd64 kn-quickstart  
+sudo mv kn-quickstart /usr/local/bin  
+kn quickstart \--help  
+```
+
+### 5\. Tworzenie Klastra Knative za pomocą kn quickstart
+
+Do szybkiego utworzenia i skonfigurowania klastra z zainstalowanym Knative należy użyć komendy kn quickstart:
+
+```bash   
+kn quickstart minikube  
+```
+
+**Należy postępować zgodnie z instrukcjami wyświetlanymi przez skrypt podczas jego wykonywania.**
+
+W celu walidacji poprawności utworzenia klastra, można wykorzystać komendę:
+
+```bash   
+minikube profile list  
+```
+
+# Instalacja aplikacji
+
+### Uruchomienie aplikacji
+
+Przed uruchomieniem skryptu należy zainstalować wszystkie wymagane komponenty opisane w rozdziale **„Konfiguracja i Wdrożenie Systemu Telemetrii”**. Dopiero po ich poprawnej instalacji można przystąpić do uruchomienia aplikacji według poniższych kroków:
+
+```bash  
+./solution.sh
+```  
+Wykonujemy ewentualne polecenia wypisane przez skrypt.
+
+# Uruchamianie demo
+
+TODO gdzie jest front, gdzie jest backend, co sie dzieje jak dodaje się komentarz
+
+# Użycie AI
+
+TODO
+
+# Podsumowanie i wnioski
+
+TODO
+
+# **Podział zadań**
 
 * modyfikacja aplikacji: symulacja błędów w usłudze Slack Sink i obsługa błędów (2 os.)  
 * itegracja aplikacji z OTel  
