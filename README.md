@@ -142,7 +142,19 @@ Z powodu przestarzałości, niezgodności wersji i problemów z konfiguracją (a
 
 ### Implementacja serwisu file-sink
 
-TODO
+Serwis file-sink obsługuje zapis odebranych eventów do pliku. Posiada on handler przyjmujący dane CloudEvent i dopisuje je do pliku w folderze /data.
+Jest on serwisem knative dodanym do sekwencji w następujący sposób:
+
+```yaml
+steps:
+    - ref: # This is the first step of the sequence, it will send the event to the file-sink service
+        apiVersion: serving.knative.dev/v1
+        kind: Service
+        name: file-sink
+```
+
+Jest on pierwszym krokiem w sekwencji przekazywania eventu i podczas testów można było zauważyć że logowanie i zapis dodawanych na frontend komentarzy do pliku działał poprawnie.
+Serwis jest zaimplementowany w JavaScript i wykorzystuje podstawowe biblioteki tego języka.
 
 #### Symulacja błędów w serwisie file-sink
 
