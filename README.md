@@ -125,7 +125,9 @@ Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
 
 ### Uproszczenie aplikacji
 
-![](images\kamel.png)
+<br>
+<img src='images\kamel.png'>
+<br>
 
 Z powodu przestarzałości, niezgodności wersji i problemów z konfiguracją (a szczególnie konfiguracją Camel-K co obrazuje powyższa infografika) postanowiono usunać następujące serwisy:
 * slack-sink (zastąpiony przez file-sink)
