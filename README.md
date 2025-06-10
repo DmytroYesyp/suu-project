@@ -1,15 +1,16 @@
-# Knative \- OTel
+Knative \- OTel
+==============
 
 [GoogleDocs](https://docs.google.com/document/d/1zVsoGiIb50rPzTMCSIOD62AAp-FyuXdTZhBHDyCoWtY/edit?tab=t.0)
 
 
-## Jan Chyczyński, Kacper Kozak, Dmytro Yesyp, Bartłomiej Słupik
+**Jan Chyczyński, Kacper Kozak, Dmytro Yesyp, Bartłomiej Słupik**
 
-## Wprowadzenie
+# Wprowadzenie
 
 Ten projekt demonstruje praktyczne zastosowanie Knative na przykładzie zmodyfikowanej aplikacji Bookstore – prostej księgarni internetowej działającej w architekturze event-driven. Aplikacja została rozszerzona o mechanizmy obsługi błędów, takie jak retry i dead letter sink, oraz zintegrowana z OpenTelemetry i Grafaną w celu monitorowania przepływu zdarzeń. Projekt ilustruje kluczowe cechy Knative, takie jak przetwarzanie zdarzeń, elastyczne skalowanie oraz niezawodna obsługa niepowodzeń, dając jednocześnie wgląd w działanie systemu dzięki wizualizacji metryk i śledzeniu zdarzeń w czasie rzeczywistym.
 
-## Podstawy teoretyczne i opis stosu technologicznego
+# Podstawy teoretyczne i opis stosu technologicznego
 
 Knative to system, który pomaga deweloperom w zarządzaniu i utrzymywaniu procesów w Kubernetes. Jego celem jest uproszczenie, zautomatyzowanie i monitorowanie wdrożeń w Kubernetes, aby zespoły spędzały mniej czasu na konserwacji, a więcej na tworzeniu aplikacji i realizacji projektów. Knative przejmuje powtarzalne i czasochłonne zadania, eliminując wąskie gardła i opóźnienia.
 
@@ -36,7 +37,7 @@ Knative posiada również wbudowane mechanizmy obsługi błędów, które zwięk
 
 Projekt oparty jest na Kubernetes i wykorzystuje Knative do zarządzania usługami i przetwarzania zdarzeń w architekturze event-driven. Backend aplikacji zbudowany jest w Node.js, interfejs użytkownika w Next.js, a dane przechowywane są w PostgreSQL. Przetwarzanie komentarzy realizują funkcje Knative wykorzystujące modele ML do analizy sentymentu i filtrowania treści. Do monitorowania systemu zastosowano OpenTelemetry oraz Grafanę, umożliwiając wizualizację przepływu zdarzeń i metryk związanych z obsługą błędów.
 
-## Koncepcja projektu
+# Koncepcja projektu
 
 [Knative Bookstore Code Samples: GitHub Aplikacja Bookstore](https://github.com/knative/docs/tree/main/code-samples/eventing/bookstore-sample-app/solution)
 
@@ -67,7 +68,131 @@ Opis katalogu „solution” przykładowej aplikacji Knative Bookstore – w pe�
 
 ![](images/image1.png)
 
-Architektura Systemu
+## Modyfikacja aplikacji Bookstore (Knative Eventing)
+
+W ramach naszego projektu dokonamy rozszerzenia aplikacji demonstracyjnej Bookstore, opartej na architekturze event-driven z wykorzystaniem Knative. Głównym celem tej modyfikacji jest zaprezentowanie mechanizmów obsługi błędów w systemie przesyłania zdarzeń, takich jak ponowne próby (retry) i obsługa zdarzeń niedostarczalnych (dead-letter sink – DLS). Dodamy też observability w postaci Grafany połączonej przez Prometheus z OpenTelemetry.
+
+1. **Symulacja błędów w usłudze Slack Sink:**
+
+   * Wprowadzimy losową awaryjność (np. zwracanie błędu HTTP 500\) w komponencie slack-sink, który odpowiada za wysyłkę powiadomień do Slacka.
+
+   * Celem jest wymuszenie sytuacji, w których zdarzenia nie są poprawnie przetwarzane.
+
+2. **Dodanie mechanizmu Dead Letter Sink:**
+
+   * Utworzymy osobny komponent (Knative Service), który będzie odbiorcą zdarzeń, które nie zostały pomyślnie dostarczone po określonej liczbie prób.
+
+   * Zostanie on przypisany jako deadLetterSink w konfiguracji brokera (lub triggera).
+
+3. **Konfiguracja polityki retry i backoff:**
+
+   * Skonfigurujemy parametry retry w Knative Eventing (liczbę prób, politykę opóźnień).
+
+   * Umożliwi to demonstrację automatycznego ponawiania dostarczania zdarzeń w przypadku niepowodzenia.
+
+4. **Obserwowalność i monitoring:**
+
+   * Wdrożymy eksportery OpenTelemetry w kluczowych komponentach.
+
+   * Dzięki temu możliwa będzie analiza tras zdarzeń, czasów przetwarzania, liczby prób oraz przypadków przekierowania do DLS.
+
+
+### **Wykorzystanie Kameleta do symulacji błędów i obsługi przez Dead Letter Sink**
+
+Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie celowe odrzucanie części wiadomości. Celem jest wygenerowanie błędów dostarczania, które trafią następnie do Dead Letter Sink (DLS), gdzie zostaną przekazane do OpenTEL w celu zwizualizowania ich w Grafanie.
+
+#### **Mechanizm działania:**
+
+1. Kamelet zostanie zaimplementowany jako konsument wiadomości (sink), który jako odpowiedź na co 5 wiadomość zwraca wyjątek..
+
+2. W przypadku zwrócenia wyjątku przez Kameleta, Knative Eventing automatycznie podejmieł próbę ponownego dostarczenia wiadomości zgodnie z polityką *retry*.
+
+3. Po przekroczeniu limitu prób, wiadomość zostanie przekierowana do wcześniej zdefiniowanego *Dead Letter Logger*, którym będzie osobny Knative Service odpowiedzialny za logowanie błędów. Odwołanie do tego serwisu będzie zdefiniowane jako *deadLetterSink* brokera *badword-broker (slack-sink/config/100-broker.yaml).*
+
+4. DLS przekaże informacje o nieudanych zdarzeniach do Grafany za pośrednictwem zintegrowanego systemu monitoringu w standardzie Open Telemetry.
+
+![](images/image3.png)
+
+
+# Architektura Rozwiązania
+
+### ![](images/image2.png)
+
+
+Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
+
+## Implementacja modyfikacji aplikacji Bookstore
+
+TODO
+
+## **Konfiguracja i Wdrożenie Systemu Telemetrii**
+
+Sekcja szczegółowo opisuje proces konfiguracji i wdrożenia kompleksowego systemu telemetrii w środowisku Kubernetes, wykorzystującego Prometheus, Grafanę oraz OpenTelemetry Collector. Celem jest zbieranie metryk zarówno z komponentów systemu, jak i z aplikacyjnych punktów końcowych, w szczególności z serwisu Node.js.
+
+#### **Przegląd Architektury Monitorowania**
+
+Zaimplementowany system monitorowania opiera się na następujących kluczowych komponentach:
+
+* **Prometheus**: Działa jako centralna baza danych do przechowywania metryk, odpowiedzialna za ich zbieranie (scraping) oraz ocenę reguł alertów.  
+* **Grafana**: Służy do wizualizacji metryk zebranych przez Prometheusa, umożliwiając tworzenie dynamicznych pulpitów nawigacyjnych (dashboardów).  
+* **OpenTelemetry Collector**: Pełni rolę pośrednika, który zbiera metryki z aplikacji (w tym przypadku serwisu Node.js) w formacie Prometheus, a następnie przesyła je do Prometheusa. Collector również udostępnia swoje własne metryki stanu.
+
+#### **Co jest monitorowane?**
+
+System jest skonfigurowany do monitorowania dwóch głównych źródeł metryk:
+
+1. **Sam OpenTelemetry Collector**: Prometheus aktywnie skrobie metryki zdrowia i wydajności samego Collectora, zapewniając wgląd w jego działanie.  
+2. **Serwis node-server**: OpenTelemetry Collector skrobie metryki wystawiane przez serwis, a następnie przesyła je do Prometheusa. Ten model odciąża Prometheusa od bezpośredniego scrapowania aplikacji i pozwala na elastyczne przetwarzanie metryk przez Collector.
+
+### **Wizualizacja i Weryfikacja Systemu Monitorowania**
+
+Poniższe zrzuty ekranu stanowią wizualne potwierdzenie poprawnego wdrożenia oraz funkcjonalności systemu telemetrii. Prezentują kluczowe aspekty od dostępu do interfejsów, przez status celów skrobania, aż po wizualizację zebranych metryk.
+
+![](images\OTel_otel-collector_console_1.png)
+
+Ten zrzut ekranu przedstawia fragment logów z kontenera OpenTelemetry Collector, uruchomionego w konsoli (najprawdopodobniej za pomocą `kubectl logs`)
+
+![](images\OTel_prometheus_data_access_test_1.png)
+
+Ten zrzut ekranu przedstawia widok interfejsu użytkownika Prometheus (zakładka "Graph" lub "Table"), wyświetlający konkretną metrykę pochodzącą z bazy danych PostgreSQL, która została zebrana przez `postgres-exporter`, przetworzona przez OpenTelemetry Collector i przesłana do Prometheus.
+
+![](images\OTel_grafana_node-server_visualtisation_1.png)
+
+Ten zrzut ekranu przedstawia panel nawigacyjny w Grafanie, który wizualizuje metryki serwera (nody). Metryki te są najprawdopodobniej zbierane przez Node Exporter. 
+
+![](images\OTel_example_grafana_1.png)
+
+Ten pulpit Grafany, również z Node Exporter, stosuje metodę USE (Utilization, Saturation, Errors) do zagregowanych metryk na poziomie całego klastra. Dostarcza szybkiego wglądu w ogólny stan wydajności i potencjalne problemy w klastrze  
+
+![](images\OTel_example_grafana_2.png)
+
+Pulpit Node Exporter w Grafanie, który wizualizuje metryki dotyczące zasobów dla każdego pojedynczego węzła w klastrze Kubernetes. Umożliwia monitorowanie zużycia CPU, pamięci i sieci dla poszczególnych maszyn.
+
+![](images\OTel_example_grafana_3.png)
+
+Pulpit nawigacyjny Grafany prezentujący ogólny przegląd stanu i wydajności serwera Prometheus. Wizualizuje kluczowe metryki działania samego systemu Prometheus.  
+
+![](images\OTel_example_prometeus_1.png)
+
+Ten widok z interfejsu użytkownika Prometheus przedstawia listę wszystkich celów (targets) monitorowania. Wskazuje ich status (UP/DOWN) oraz szczegóły skrobania, potwierdzając, czy Prometheus skutecznie zbiera metryki ze skonfigurowanych źródeł.
+
+## **Opis Działania Aplikacji**
+
+W niniejszej sekcji przedstawiono wizualne potwierdzenie poprawnego uruchomienia komponentów frontendu i backendu aplikacji.  
+**1\. Działanie Frontendu**
+![frontend aplikacji](https://github.com/user-attachments/assets/af6bb047-549b-400c-9bc8-6074f7645661)
+
+![](images\frontend_example_app_1.png)
+
+Powyższy zrzut ekranu prezentuje poprawnie uruchomiony interfejs użytkownika (frontend) aplikacji.   
+
+**2\. Działanie Backendu**
+![Backend](https://github.com/user-attachments/assets/90a3824f-c8fe-4bed-b8e9-56b8fd36daaf)
+
+![](images\backend_example_app_1.png)
+
+Powyższy zrzut ekranu prezentuje poprawnie uruchomiony backendu aplikacji. 
+
 
 # Opis konfiguracji środowiska
 
@@ -137,31 +262,9 @@ W celu walidacji poprawności utworzenia klastra, można wykorzystać komendę:
 minikube profile list  
 ```
 
-### 6\. [Instalacja func cli](https://knative.dev/docs/functions/install-func/#installing-the-func-cli)
+# Instalacja aplikacji
 
-func CLI jest narzędziem wspierającym pracę z Knative Functions. Jego instalacja przebiega w następujący sposób:
-
-```bash  
-wget https://github.com/knative/func/releases/download/knative-v1.18.1/func_linux_amd64
-mv func_linux_amd64 func
-chmod +x func
-sudo mv func /usr/local/bin
-func version
-```
-
-### **7\. [Instalacja Apache Camel K (kamel)](https://downloads.apache.org/camel/camel-k/2.6.0/)**
-
-Apache Camel K to rozwiązanie Serverless do integracji, zaprojektowane do działania natywnie w środowisku Kubernetes. Instalacja klienta kamel realizowana jest poprzez:
-
-```bash   
-wget [https://downloads.apache.org/camel/camel-k/2.6.0/camel-k-client-2.6.0-linux-amd64.tar.gz](https://downloads.apache.org/camel/camel-k/2.6.0/camel-k-client-2.6.0-linux-amd64.tar.gz)  
-tar \-xvzf camel-k-client-2.6.0-linux-amd64.tar.gz   
-sudo mv kamel /usr/local/bin/   
-chmod \+x /usr/local/bin/kamel   
-kamel version   
-```
-
-### 8\. Uruchomienie aplikacji
+### Uruchomienie aplikacji
 
 Przed uruchomieniem skryptu należy zainstalować wszystkie wymagane komponenty opisane w rozdziale **„Konfiguracja i Wdrożenie Systemu Telemetrii”**. Dopiero po ich poprawnej instalacji można przystąpić do uruchomienia aplikacji według poniższych kroków:
 
@@ -170,161 +273,19 @@ Przed uruchomieniem skryptu należy zainstalować wszystkie wymagane komponenty 
 ```  
 Wykonujemy ewentualne polecenia wypisane przez skrypt.
 
-### **Konfiguracja i Wdrożenie Systemu Telemetrii**
+# Uruchamianie demo
 
-Sekcja szczegółowo opisuje proces konfiguracji i wdrożenia kompleksowego systemu telemetrii w środowisku Kubernetes, wykorzystującego Prometheus, Grafanę oraz OpenTelemetry Collector. Celem jest zbieranie metryk zarówno z komponentów systemu, jak i z aplikacyjnych punktów końcowych, w szczególności z serwisu Node.js.
+TODO gdzie jest front, gdzie jest backend, co sie dzieje jak dodaje się komentarz
 
-#### **Przegląd Architektury Monitorowania**
+# Użycie AI
 
-Zaimplementowany system monitorowania opiera się na następujących kluczowych komponentach:
+TODO
 
-* **Prometheus**: Działa jako centralna baza danych do przechowywania metryk, odpowiedzialna za ich zbieranie (scraping) oraz ocenę reguł alertów.  
-* **Grafana**: Służy do wizualizacji metryk zebranych przez Prometheusa, umożliwiając tworzenie dynamicznych pulpitów nawigacyjnych (dashboardów).  
-* **OpenTelemetry Collector**: Pełni rolę pośrednika, który zbiera metryki z aplikacji (w tym przypadku serwisu Node.js) w formacie Prometheus, a następnie przesyła je do Prometheusa. Collector również udostępnia swoje własne metryki stanu.
+# Podsumowanie i wnioski
 
-#### **Co jest monitorowane?**
+TODO
 
-System jest skonfigurowany do monitorowania dwóch głównych źródeł metryk:
-
-1. **Sam OpenTelemetry Collector**: Prometheus aktywnie skrobie metryki zdrowia i wydajności samego Collectora, zapewniając wgląd w jego działanie.  
-2. **Serwis node-server**: OpenTelemetry Collector skrobie metryki wystawiane przez serwis, a następnie przesyła je do Prometheusa. Ten model odciąża Prometheusa od bezpośredniego scrapowania aplikacji i pozwala na elastyczne przetwarzanie metryk przez Collector.
-
-### **Wizualizacja i Weryfikacja Systemu Monitorowania**
-
-Poniższe zrzuty ekranu stanowią wizualne potwierdzenie poprawnego wdrożenia oraz funkcjonalności systemu telemetrii. Prezentują kluczowe aspekty od dostępu do interfejsów, przez status celów skrobania, aż po wizualizację zebranych metryk.
-
-![](images\OTel_otel-collector_console_1.png)
-
-Ten zrzut ekranu przedstawia fragment logów z kontenera OpenTelemetry Collector, uruchomionego w konsoli (najprawdopodobniej za pomocą `kubectl logs`)
-
-![](images\OTel_prometheus_data_access_test_1.png)
-
-Ten zrzut ekranu przedstawia widok interfejsu użytkownika Prometheus (zakładka "Graph" lub "Table"), wyświetlający konkretną metrykę pochodzącą z bazy danych PostgreSQL, która została zebrana przez `postgres-exporter`, przetworzona przez OpenTelemetry Collector i przesłana do Prometheus.
-
-![](images\OTel_grafana_node-server_visualtisation_1.png)
-
-Ten zrzut ekranu przedstawia panel nawigacyjny w Grafanie, który wizualizuje metryki serwera (nody). Metryki te są najprawdopodobniej zbierane przez Node Exporter. 
-
-![](images\OTel_example_grafana_1.png)
-
-Ten pulpit Grafany, również z Node Exporter, stosuje metodę USE (Utilization, Saturation, Errors) do zagregowanych metryk na poziomie całego klastra. Dostarcza szybkiego wglądu w ogólny stan wydajności i potencjalne problemy w klastrze  
-
-![](images\OTel_example_grafana_2.png)
-
-Pulpit Node Exporter w Grafanie, który wizualizuje metryki dotyczące zasobów dla każdego pojedynczego węzła w klastrze Kubernetes. Umożliwia monitorowanie zużycia CPU, pamięci i sieci dla poszczególnych maszyn.
-
-![](images\OTel_example_grafana_3.png)
-
-Pulpit nawigacyjny Grafany prezentujący ogólny przegląd stanu i wydajności serwera Prometheus. Wizualizuje kluczowe metryki działania samego systemu Prometheus.  
-
-![](images\OTel_example_prometeus_1.png)
-
-Ten widok z interfejsu użytkownika Prometheus przedstawia listę wszystkich celów (targets) monitorowania. Wskazuje ich status (UP/DOWN) oraz szczegóły skrobania, potwierdzając, czy Prometheus skutecznie zbiera metryki ze skonfigurowanych źródeł.
-
-## **Opis Działania Aplikacji**
-
-W niniejszej sekcji przedstawiono wizualne potwierdzenie poprawnego uruchomienia komponentów frontendu i backendu aplikacji.  
-**1\. Działanie Frontendu**
-![frontend aplikacji](https://github.com/user-attachments/assets/af6bb047-549b-400c-9bc8-6074f7645661)
-
-![](images\frontend_example_app_1.png)
-
-Powyższy zrzut ekranu prezentuje poprawnie uruchomiony interfejs użytkownika (frontend) aplikacji.   
-
-**2\. Działanie Backendu**
-![Backend](https://github.com/user-attachments/assets/90a3824f-c8fe-4bed-b8e9-56b8fd36daaf)
-
-![](images\backend_example_app_1.png)
-
-Powyższy zrzut ekranu prezentuje poprawnie uruchomiony backendu aplikacji. 
-
-## Modyfikacja aplikacji Bookstore (Knative Eventing)
-
-W ramach naszego projektu dokonamy rozszerzenia aplikacji demonstracyjnej Bookstore, opartej na architekturze event-driven z wykorzystaniem Knative. Głównym celem tej modyfikacji jest zaprezentowanie mechanizmów obsługi błędów w systemie przesyłania zdarzeń, takich jak ponowne próby (retry) i obsługa zdarzeń niedostarczalnych (dead-letter sink – DLS). Dodamy też observability w postaci Grafany połączonej przez Prometheus z OpenTelemetry.
-
-1. **Symulacja błędów w usłudze Slack Sink:**
-
-   * Wprowadzimy losową awaryjność (np. zwracanie błędu HTTP 500\) w komponencie slack-sink, który odpowiada za wysyłkę powiadomień do Slacka.
-
-   * Celem jest wymuszenie sytuacji, w których zdarzenia nie są poprawnie przetwarzane.
-
-2. **Dodanie mechanizmu Dead Letter Sink:**
-
-   * Utworzymy osobny komponent (Knative Service), który będzie odbiorcą zdarzeń, które nie zostały pomyślnie dostarczone po określonej liczbie prób.
-
-   * Zostanie on przypisany jako deadLetterSink w konfiguracji brokera (lub triggera).
-
-3. **Konfiguracja polityki retry i backoff:**
-
-   * Skonfigurujemy parametry retry w Knative Eventing (liczbę prób, politykę opóźnień).
-
-   * Umożliwi to demonstrację automatycznego ponawiania dostarczania zdarzeń w przypadku niepowodzenia.
-
-4. **Obserwowalność i monitoring:**
-
-   * Wdrożymy eksportery OpenTelemetry w kluczowych komponentach.
-
-   * Dzięki temu możliwa będzie analiza tras zdarzeń, czasów przetwarzania, liczby prób oraz przypadków przekierowania do DLS.
-
-### ![](images/image2.png)
-
-
-Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
-
-### 
-
-### **Wykorzystanie Kameleta do symulacji błędów i obsługi przez Dead Letter Sink**
-
-Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie celowe odrzucanie części wiadomości. Celem jest wygenerowanie błędów dostarczania, które trafią następnie do Dead Letter Sink (DLS), gdzie zostaną przekazane do OpenTEL w celu zwizualizowania ich w Grafanie.
-
-#### **Mechanizm działania:**
-
-1. Kamelet zostanie zaimplementowany jako konsument wiadomości (sink), który jako odpowiedź na co 5 wiadomość zwraca wyjątek..
-
-2. W przypadku zwrócenia wyjątku przez Kameleta, Knative Eventing automatycznie podejmieł próbę ponownego dostarczenia wiadomości zgodnie z polityką *retry*.
-
-3. Po przekroczeniu limitu prób, wiadomość zostanie przekierowana do wcześniej zdefiniowanego *Dead Letter Logger*, którym będzie osobny Knative Service odpowiedzialny za logowanie błędów. Odwołanie do tego serwisu będzie zdefiniowane jako *deadLetterSink* brokera *badword-broker (slack-sink/config/100-broker.yaml).*
-
-4. DLS przekaże informacje o nieudanych zdarzeniach do Grafany za pośrednictwem zintegrowanego systemu monitoringu w standardzie Open Telemetry.
-
-![](images/image3.png)
-
-## Implementacja modyfikacji aplikacji Bookstore
-
-### Niestabilny serwis "slack-sink"
-unstable-slack-sink.kamalet.yaml
-```
-apiVersion: camel.apache.org/v1
-kind: Kamelet
-```
-(...)
-```
-  template:
-    from:
-      uri: "kamelet:source"
-      steps:
-        - choice:
-            when:
-              - expression:
-                  simple: "${random(1,5)} == 1"
-                steps:
-                  - log:
-                      message: "Simulated failure"
-                  - throwException:
-                      exceptionType: "java.lang.RuntimeException"
-                      message: "Random simulated Slack failure"
-            otherwise:
-              steps:
-                - set-header:
-                    name: Content-Type
-                    constant: application/json
-                - marshal:
-                    json:
-                      library: Jackson
-                - toD: "https://{{webhookUrl}}"
-```
-
-### **Podział zadań**
+# **Podział zadań**
 
 * modyfikacja aplikacji: symulacja błędów w usłudze Slack Sink i obsługa błędów (2 os.)  
 * itegracja aplikacji z OTel  
