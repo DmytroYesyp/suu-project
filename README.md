@@ -146,7 +146,66 @@ TODO
 
 #### Symulacja błędów w serwisie file-sink
 
+Fragment `file-sink/index.js` odpowiadający za symulację błędów
+```javascript
+ // Save the received event to a file (append mode)
+ fs.appendFileSync('/data/events.log', JSON.stringify(req.body) + '\n');
+ if (Math.random() < 0.5) {
+   fs.appendFileSync('/data/events.log', 'error simulated\n');
+   return res.status(500).send('Internal Server Error');
+ }
+ // Respond with a success message
+ res.status(200).send('Event saved');
+ ```
 
+ ### Dead Letter Sink
+
+ #### Definicja serwisu dead-letter-logger
+
+ dead-letter-logger\config\dead-letter-logger.yaml
+
+ ```yaml
+ apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: dead-letter-logger
+spec:
+  template:
+    metadata:
+      annotations:
+        # Tells Knative not to try pulling the image from Docker Hub
+        "container.applinks.io/skipImagePull": "true"
+    spec:
+      containers:
+        - image: dev.local/dead-letter-logger:latest
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - containerPort: 8080
+      volumes:
+        - name: data
+          emptyDir: {}
+```
+
+#### Podpięcie `dead-letter-logger` jako dead letter sink `bookstore-broker`
+
+```
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  name: bookstore-broker
+spec:
+  delivery:
+    deadLetterSink:
+      ref:
+        apiVersion: serving.knative.dev/v1
+        kind: Service
+        name: dead-letter-logger
+    retry: 2
+    backoffPolicy: exponential
+    backoffDelay: PT1S
+```
 
 ## **Konfiguracja i Wdrożenie Systemu Telemetrii**
 
@@ -372,7 +431,13 @@ TODO
 
 # Podsumowanie i wnioski
 
-TODO
+Podczas realizacji projektu napotkaliśmy istotne trudności związane z konfiguracją oryginalnej aplikacji demonstracyjnej Knative Bookstore. Głównym problemem był brak aktywnego rozwoju tej aplikacji, co skutkowało niekompatybilnością wersji, przestarzałymi zależnościami i nieaktualną dokumentacją. 
+
+Kluczowe okazało się skupienie na rzeczywistej istocie projektu – telemetri, demonstracji mechanizmów event-driven, oraz dodatkowo obsługi błędów w Knative – zamiast wiernego odtwarzania każdego elementu oryginalnej architektury. W przypadku problemów konfiguracyjnych uprościliśmy rozwiązanie, zastępując problematyczne serwisy własnymi, prostszymi komponentami. Takie podejście pozwoliło nam nie tylko ukończyć projekt, ale także lepiej zrozumieć kluczowe mechanizmy Knative i praktyczne aspekty wdrażania rozwiązań serverless oraz event-driven w Kubernetes. 
+
+Elastyczność i krytyczne podejście do wymagań są równie ważne jak znajomość narzędzi – czasem prostsze, własne rozwiązanie lepiej spełnia cele edukacyjne niż próba uruchomienia przestarzałej, złożonej aplikacji. Ze smutkiem wspominamy każdą godzinę poświęconą na próbę otworzenia oryginalnej aplikacji, zanim zorientowaliśmy się że to nie jest optymalne podejście, ale liczymy że każda z tych godzin dosadniej uświadomiła nam jak ważne jest całościowe i krytyczne spojrzenie na projekt.
+
+Udało się skutecznie wdrożyć system observability z wykorzystaniem OpenTelemetry, Prometheusa i Grafany. Było to kształcące doświadczenie, które pozwoliło nam w praktyce poznać, jak działają narzędzia do monitorowania i śledzenia przepływu zdarzeń w architekturze event-driven. Dzięki temu mogliśmy lepiej zrozumieć zarówno techniczne aspekty wdrożenia, jak i korzyści płynące z monitorowania rozproszonych systemów.
 
 # **Podział zadań**
 
