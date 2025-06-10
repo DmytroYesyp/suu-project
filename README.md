@@ -66,7 +66,9 @@ Opis katalogu „solution” przykładowej aplikacji Knative Bookstore – w pe�
 7. **slack-sink/**  
     Integracja z Slack (Apache Camel) wysyłająca powiadomienia o nowych recenzjach.
 
-![](images/image1.png)
+<br>
+<img src='images/image1.png'>
+<br>
 
 ## Modyfikacja aplikacji Bookstore (Knative Eventing)
 
@@ -111,12 +113,16 @@ Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie ce
 
 4. DLS przekaże informacje o nieudanych zdarzeniach do Grafany za pośrednictwem zintegrowanego systemu monitoringu w standardzie Open Telemetry.
 
-![](images/image3.png)
+<br>
+<img src='images/image3.png'>
+<br>
 
 
 # Architektura Rozwiązania
 
-### ![](images/image2.png)
+### <br>
+<img src='images/image2.png'>
+<br>
 
 
 Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
@@ -209,7 +215,9 @@ Poniższe kroki przedstawiają kompletny proces instalacji i konfiguracji opisan
    kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
    ```
 
-![](images\OTel_password_guide_1.png)
+<br>
+<img src='images\OTel_password_guide_1.png'>
+<br>
 
 wynik polecenia służącego do pobrania i dekodowania hasła administratora Grafany
 
@@ -229,19 +237,27 @@ Ten krok zakłada, że pliki YAML znajdujące się w otel-collector/ zostały wc
 
 Poniższe zrzuty ekranu stanowią wizualne potwierdzenie poprawnego wdrożenia oraz funkcjonalności systemu telemetrii. Prezentują kluczowe aspekty od dostępu do interfejsów, przez status celów skrobania, aż po wizualizację zebranych metryk.
 
-![](images\OTel_example_grafana_1.png)
+<br>
+<img src='images\OTel_example_grafana_1.png'>
+<br>
 
 Ten pulpit Grafany, również z Node Exporter, stosuje metodę USE (Utilization, Saturation, Errors) do zagregowanych metryk na poziomie całego klastra. Dostarcza szybkiego wglądu w ogólny stan wydajności i potencjalne problemy w klastrze  
 
-![](images\OTel_example_grafana_2.png)
+<br>
+<img src='images\OTel_example_grafana_2.png'>
+<br>
 
 Pulpit Node Exporter w Grafanie, który wizualizuje metryki dotyczące zasobów dla każdego pojedynczego węzła w klastrze Kubernetes. Umożliwia monitorowanie zużycia CPU, pamięci i sieci dla poszczególnych maszyn.
 
-![](images\OTel_example_grafana_3.png)
+<br>
+<img src='images\OTel_example_grafana_3.png'>
+<br>
 
 Pulpit nawigacyjny Grafany prezentujący ogólny przegląd stanu i wydajności serwera Prometheus. Wizualizuje kluczowe metryki działania samego systemu Prometheus.  
 
-![](images\OTel_example_prometeus_1.png)
+<br>
+<img src='images\OTel_example_prometeus_1.png'>
+<br>
 
 Ten widok z interfejsu użytkownika Prometheus przedstawia listę wszystkich celów (targets) monitorowania. Wskazuje ich status (UP/DOWN) oraz szczegóły skrobania, potwierdzając, czy Prometheus skutecznie zbiera metryki ze skonfigurowanych źródeł.
 
@@ -251,14 +267,18 @@ W niniejszej sekcji przedstawiono wizualne potwierdzenie poprawnego uruchomienia
 **1\. Działanie Frontendu**
 ![frontend aplikacji](https://github.com/user-attachments/assets/af6bb047-549b-400c-9bc8-6074f7645661)
 
-![](images\frontend_example_app_1.png)
+<br>
+<img src='images\frontend_example_app_1.png'>
+<br>
 
 Powyższy zrzut ekranu prezentuje poprawnie uruchomiony interfejs użytkownika (frontend) aplikacji.   
 
 **2\. Działanie Backendu**
 ![Backend](https://github.com/user-attachments/assets/90a3824f-c8fe-4bed-b8e9-56b8fd36daaf)
 
-![](images\backend_example_app_1.png)
+<br>
+<img src='images\backend_example_app_1.png'>
+<br>
 
 Powyższy zrzut ekranu prezentuje poprawnie uruchomiony backendu aplikacji. 
 
