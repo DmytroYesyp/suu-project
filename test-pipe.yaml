@@ -1,0 +1,22 @@
+apiVersion: camel.apache.org/v1
+kind: Pipe
+metadata:
+  name: test-unstable-slack
+spec:
+  source:
+    ref:
+      kind: Kamelet
+      apiVersion: camel.apache.org/v1
+      name: timer-source
+    properties:
+      message: '{"reviewText": "This is a test"}'
+      period: 10000  # every 3 seconds
+  sink:
+    ref:
+      kind: Kamelet
+      apiVersion: camel.apache.org/v1
+      name: unstable-slack-sink
+    properties:
+      webhookUrl: "https://hooks.slack.com/services/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"
+      channel: "#bookstore-owner"
+

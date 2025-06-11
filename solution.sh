@@ -129,7 +129,7 @@ echo "✅ Bookstore Frontend installed."
 # Prompt the user to check the frontend
 echo ""
 echo "✅ The frontend is now installed. Please visit http://localhost:3000 to view the bookstore frontend."
-kubectl port-forward svc/bookstore-frontend-svc 3000:3000 &
+kubectl port-forward svc/bookstore-frontend-svc 3000:3000 &>/dev/null &
 # echo error or ok based on the exit code of the previous command
 if [ $? -eq 0 ]; then
     echo "✅ Successfully forwarded port 3000 to localhost."
@@ -160,7 +160,7 @@ echo "✅ Bookstore Backend (node-server) installed."
 echo ""
 echo "✅ The node-server is now installed. Please visit http://localhost:8080 to view the bookstore node-server."
 echo "running 'kubectl port-forward svc/node-server-svc 8080:80'"
-kubectl port-forward svc/node-server-svc 8080:80 &
+kubectl port-forward svc/node-server-svc 8080:80 &>/dev/null &
 # echo error or ok based on the exit code of the previous command
 if [ $? -eq 0 ]; then
     echo "✅ Successfully forwarded port 8080 to localhost."
@@ -169,18 +169,6 @@ else
     echo "⚠️ If you cannot access the backend, please open a new terminal and run 'kubectl port-forward svc/node-server-svc 8080:80' to forward the port to your localhost."
 fi
 read -p '🛑 Can you see "Hello World!"? If yes, press ENTER to continue...'
-# Deploy the ML services
-# echo ""
-# echo "📦 Deploying the ML service: bad-word-filter..."
-# cd ../ML-bad-word-filter
-# func deploy -b=s2i -v
-# echo "✅ ML service bad-word-filter deployed."
-
-# echo ""
-# echo "📦 Deploying the ML services: sentiment-analysis..."
-# cd ../ML-sentiment-analysis
-# func deploy -b=s2i -v
-# echo "✅ ML service sentiment-analysis deployed."
 
 # Install the database
 echo ""
@@ -189,33 +177,49 @@ cd ..
 kubectl apply -f db-service
 echo "✅ Database installed."
 
+cd file-sink
+eval $(minikube docker-env)
+docker build -t file-sink:latest .
+docker tag file-sink:latest dev.local/file-sink:latest
+kn service apply file-sink --image=dev.local/file-sink --pull-policy=Never
+cd -
+
+cd dead-letter-logger
+eval $(minikube docker-env)
+docker build -t dead-letter-logger:latest .
+docker tag dead-letter-logger:latest dev.local/dead-letter-logger:latest
+kn service apply dead-letter-logger --image=dev.local/dead-letter-logger --pull-policy=Never
+cd -
+
+read -p '🛑 Instalacja sekwencji. Upewnij się byczku, że file-sink już działa i ma się dobrze.'
+
 # Install the sequence
 echo ""
 echo "📦 Installing the sequence..."
 kubectl apply -f sequence/config
 echo "✅ Sequence installed."
 
-# Ask the user to edit the properties file
-echo ""
-echo "📝 Please edit slack-sink/application.properties to provide the webhook URL for Slack."
-read -p "🛑 Press ENTER to continue..."
+# # Ask the user to edit the properties file
+# echo ""
+# echo "📝 Please edit slack-sink/application.properties to provide the webhook URL for Slack."
+# read -p "🛑 Press ENTER to continue..."
 
-# Create the secret
-echo ""
-echo "🔑 Creating the secret for Slack..."
-kubectl create secret generic slack-credentials --from-file=slack-sink/application.properties
-echo "✅ Slack secret created."
+# # Create the secret
+# echo ""
+# echo "🔑 Creating the secret for Slack..."
+# kubectl create secret generic slack-credentials --from-file=slack-sink/application.properties
+# echo "✅ Slack secret created."
 
-# Install the slack-sink
-echo ""
-echo "📦 Installing the Slack Sink..."
-kubectl apply -f slack-sink/config
+# # Install the slack-sink
+# echo ""
+# echo "📦 Installing the Slack Sink..."
+# kubectl apply -f slack-sink/config
 
-# Wait for the slack-sink to be ready
-echo ""
-echo "⏳ Waiting for the slack-sink to be ready..."
-kubectl wait --for=condition=ready pod -l app=pipe-00001 --timeout=300s
-echo "✅ Slack Sink installed."
+# # Wait for the slack-sink to be ready
+# echo ""
+# echo "⏳ Waiting for the slack-sink to be ready..."
+# kubectl wait --for=condition=ready pod -l app=pipe-00001 --timeout=300s
+# echo "✅ Slack Sink installed."
 
 # Ask user to open a new terminal to set the minikube tunnel
 echo ""

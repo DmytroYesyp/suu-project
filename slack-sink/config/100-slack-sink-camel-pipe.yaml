@@ -5,18 +5,19 @@ metadata:
   annotations:
     trait.camel.apache.org/mount.configs: "secret:slack-credentials"  # An annotation that specifies the secret to mount for the Pipe.
 spec:
-  source:  # Defines the source of events for the Pipe.
+  source:
     ref:
-      kind: Broker  # Specifies the kind of source, in this case, a Knative Eventing Broker.
-      apiVersion: eventing.knative.dev/v1  # The API version of the Knative Eventing Broker.
-      name: badword-broker  # The name of the Broker, "book-review-broker" in this case
+      kind: Kamelet
+      apiVersion: camel.apache.org/v1
+      name: timer-source
     properties:
-      type: moderated-comment  # A filter that specifies the type of events this Pipe will listen for, here it's listening for events of type "bad-comment". You have to have this type specified.
+      message: '{"reviewText": "This is a test"}'
+      period: 10000  # every 3 seconds
   sink:  # Defines the destination for events processed by this Pipe.
     ref:
       kind: Kamelet  # Specifies that the sink is a Kamelet, a Camel K component for connecting to external services.
       apiVersion: camel.apache.org/v1  # The API version for Kamelet.
-      name: slack-sink  # The name of the Kamelet to use as the sink, in this case, a predefined "slack-sink" Kamelet.
+      name: unstable-slack-sink  # The name of the Kamelet to use as the sink, in this case, a predefined "slack-sink" Kamelet.
     properties:
       channel: ${slack.channel}  # The channel to post messages to, specified in the secret.
       webhookUrl: ${slack.webhook.url} # The webhook URL to use for posting messages, specified in the secret.

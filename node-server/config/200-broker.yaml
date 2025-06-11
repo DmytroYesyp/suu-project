@@ -2,6 +2,16 @@ apiVersion: eventing.knative.dev/v1
 kind: Broker
 metadata:
   name: bookstore-broker
+spec:
+  delivery:
+    deadLetterSink:
+      ref:
+        apiVersion: serving.knative.dev/v1
+        kind: Service
+        name: dead-letter-logger
+    retry: 2
+    backoffPolicy: exponential
+    backoffDelay: PT1S
 
 ---
 apiVersion: eventing.knative.dev/v1

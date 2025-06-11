@@ -1,0 +1,21 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: file-sink
+spec:
+  template:
+    metadata:
+      annotations:
+        # Tells Knative not to try pulling the image from Docker Hub
+        "container.applinks.io/skipImagePull": "true"
+    spec:
+      containers:
+        - image: dev.local/file-sink:latest
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - containerPort: 8080
+      volumes:
+        - name: data
+          emptyDir: {}

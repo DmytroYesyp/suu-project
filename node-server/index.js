@@ -207,6 +207,7 @@ app.post('/add', async (req, res) => {
 
             fetchSpan.setStatus({ code: opentelemetry.SpanStatusCode.OK });
             console.log('Event forwarded successfully:', receivedEvent);
+            console.log('brokerURI :', brokerURI);
             httpRequestCounter.inc({ method: req.method, route: '/add', code: 200 });
             span.setStatus({ code: opentelemetry.SpanStatusCode.OK });
             return res.status(200).json({ success: true, message: 'Event forwarded successfully' });

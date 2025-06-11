@@ -66,7 +66,9 @@ Opis katalogu „solution” przykładowej aplikacji Knative Bookstore – w pe�
 7. **slack-sink/**  
     Integracja z Slack (Apache Camel) wysyłająca powiadomienia o nowych recenzjach.
 
-![](images/image1.png)
+<br>
+<img src='images/image1.png'>
+<br>
 
 ## Modyfikacja aplikacji Bookstore (Knative Eventing)
 
@@ -111,12 +113,16 @@ Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie ce
 
 4. DLS przekaże informacje o nieudanych zdarzeniach do Grafany za pośrednictwem zintegrowanego systemu monitoringu w standardzie Open Telemetry.
 
-![](images/image3.png)
+<br>
+<img src='images/image3.png'>
+<br>
 
 
 # Architektura Rozwiązania
 
-### ![](images/image2.png)
+### <br>
+<img src='images/image2.png'>
+<br>
 
 
 Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
@@ -125,7 +131,9 @@ Architektura Systemu Systemu Knative \- OTel (Zmodyfikowana)
 
 ### Uproszczenie aplikacji
 
-![](images\kamel.png)
+<br>
+<img src='images\kamel.png'>
+<br>
 
 Z powodu przestarzałości, niezgodności wersji i problemów z konfiguracją (a szczególnie konfiguracją Camel-K co obrazuje powyższa infografika) postanowiono usunać następujące serwisy:
 * slack-sink (zastąpiony przez file-sink)
@@ -138,7 +146,66 @@ TODO
 
 #### Symulacja błędów w serwisie file-sink
 
+Fragment `file-sink/index.js` odpowiadający za symulację błędów
+```javascript
+ // Save the received event to a file (append mode)
+ fs.appendFileSync('/data/events.log', JSON.stringify(req.body) + '\n');
+ if (Math.random() < 0.5) {
+   fs.appendFileSync('/data/events.log', 'error simulated\n');
+   return res.status(500).send('Internal Server Error');
+ }
+ // Respond with a success message
+ res.status(200).send('Event saved');
+ ```
 
+ ### Dead Letter Sink
+
+ #### Definicja serwisu dead-letter-logger
+
+ dead-letter-logger\config\dead-letter-logger.yaml
+
+ ```yaml
+ apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: dead-letter-logger
+spec:
+  template:
+    metadata:
+      annotations:
+        # Tells Knative not to try pulling the image from Docker Hub
+        "container.applinks.io/skipImagePull": "true"
+    spec:
+      containers:
+        - image: dev.local/dead-letter-logger:latest
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - containerPort: 8080
+      volumes:
+        - name: data
+          emptyDir: {}
+```
+
+#### Podpięcie `dead-letter-logger` jako dead letter sink `bookstore-broker`
+
+```
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  name: bookstore-broker
+spec:
+  delivery:
+    deadLetterSink:
+      ref:
+        apiVersion: serving.knative.dev/v1
+        kind: Service
+        name: dead-letter-logger
+    retry: 2
+    backoffPolicy: exponential
+    backoffDelay: PT1S
+```
 
 ## **Konfiguracja i Wdrożenie Systemu Telemetrii**
 
@@ -207,7 +274,9 @@ Poniższe kroki przedstawiają kompletny proces instalacji i konfiguracji opisan
    kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
    ```
 
-![](images\OTel_password_guide_1.png)
+<br>
+<img src='images\OTel_password_guide_1.png'>
+<br>
 
 wynik polecenia służącego do pobrania i dekodowania hasła administratora Grafany
 
@@ -227,19 +296,27 @@ Ten krok zakłada, że pliki YAML znajdujące się w otel-collector/ zostały wc
 
 Poniższe zrzuty ekranu stanowią wizualne potwierdzenie poprawnego wdrożenia oraz funkcjonalności systemu telemetrii. Prezentują kluczowe aspekty od dostępu do interfejsów, przez status celów skrobania, aż po wizualizację zebranych metryk.
 
-![](images\OTel_example_grafana_1.png)
+<br>
+<img src='images\OTel_example_grafana_1.png'>
+<br>
 
 Ten pulpit Grafany, również z Node Exporter, stosuje metodę USE (Utilization, Saturation, Errors) do zagregowanych metryk na poziomie całego klastra. Dostarcza szybkiego wglądu w ogólny stan wydajności i potencjalne problemy w klastrze  
 
-![](images\OTel_example_grafana_2.png)
+<br>
+<img src='images\OTel_example_grafana_2.png'>
+<br>
 
 Pulpit Node Exporter w Grafanie, który wizualizuje metryki dotyczące zasobów dla każdego pojedynczego węzła w klastrze Kubernetes. Umożliwia monitorowanie zużycia CPU, pamięci i sieci dla poszczególnych maszyn.
 
-![](images\OTel_example_grafana_3.png)
+<br>
+<img src='images\OTel_example_grafana_3.png'>
+<br>
 
 Pulpit nawigacyjny Grafany prezentujący ogólny przegląd stanu i wydajności serwera Prometheus. Wizualizuje kluczowe metryki działania samego systemu Prometheus.  
 
-![](images\OTel_example_prometeus_1.png)
+<br>
+<img src='images\OTel_example_prometeus_1.png'>
+<br>
 
 Ten widok z interfejsu użytkownika Prometheus przedstawia listę wszystkich celów (targets) monitorowania. Wskazuje ich status (UP/DOWN) oraz szczegóły skrobania, potwierdzając, czy Prometheus skutecznie zbiera metryki ze skonfigurowanych źródeł.
 
@@ -249,85 +326,67 @@ W niniejszej sekcji przedstawiono wizualne potwierdzenie poprawnego uruchomienia
 **1\. Działanie Frontendu**
 ![frontend aplikacji](https://github.com/user-attachments/assets/af6bb047-549b-400c-9bc8-6074f7645661)
 
-![](images\frontend_example_app_1.png)
+<br>
+<img src='images\frontend_example_app_1.png'>
+<br>
 
 Powyższy zrzut ekranu prezentuje poprawnie uruchomiony interfejs użytkownika (frontend) aplikacji.   
 
 **2\. Działanie Backendu**
 ![Backend](https://github.com/user-attachments/assets/90a3824f-c8fe-4bed-b8e9-56b8fd36daaf)
 
-![](images\backend_example_app_1.png)
+<br>
+<img src='images\backend_example_app_1.png'>
+<br>
 
 Powyższy zrzut ekranu prezentuje poprawnie uruchomiony backendu aplikacji. 
 
 
-# Opis konfiguracji środowiska
+W ramach naszego projektu dokonamy rozszerzenia aplikacji demonstracyjnej Bookstore, opartej na architekturze event-driven z wykorzystaniem Knative. Głównym celem tej modyfikacji jest zaprezentowanie mechanizmów obsługi błędów w systemie przesyłania zdarzeń, takich jak ponowne próby (retry) i obsługa zdarzeń niedostarczalnych (dead-letter sink – DLS). Dodamy też observability w postaci Grafany połączonej przez Prometheus z OpenTelemetry.
 
-## **Konfiguracja Środowiska i Uruchomienie Aplikacji (Minikube, Knative, Camel K)**
+1. **Symulacja błędów w usłudze Slack Sink:**
 
-Prezentowane demo zostało wdrożone na **lokalnym klastrze Kubernetesa** przy użyciu **Minikube**. 
+   * Wprowadzimy losową awaryjność (np. zwracanie błędu HTTP 500\) w komponencie slack-sink, który odpowiada za wysyłkę powiadomień do Slacka.
 
-### **1\. Instalacja WSL i Ubuntu 20.04**
+   * Celem jest wymuszenie sytuacji, w których zdarzenia nie są poprawnie przetwarzane.
 
-W przypadku pracy na systemie operacyjnym Windows, pierwszym krokiem jest instalacja **Windows Subsystem for Linux (WSL)** wraz z dystrybucją **Ubuntu 20.04**. Proces instalacji realizowany jest za pomocą poniższego polecenia:
+2. **Dodanie mechanizmu Dead Letter Sink:**
 
-```bash  
-wsl \--install Ubuntu-20.04  
-```
+   * Utworzymy osobny komponent (Knative Service), który będzie odbiorcą zdarzeń, które nie zostały pomyślnie dostarczone po określonej liczbie prób.
 
-### **2\. Instalacja Minikube**
+   * Zostanie on przypisany jako deadLetterSink w konfiguracji brokera (lub triggera).
 
-Minikube pełni rolę lokalnego klastra Kubernetes. Poniżej przedstawiono dwie metody instalacji:
+3. **Konfiguracja polityki retry i backoff:**
 
-#### Metoda 1: Instalacja bezpośrednia (dla systemów Linux)
+   * Skonfigurujemy parametry retry w Knative Eventing (liczbę prób, politykę opóźnień).
 
-```bash  
-curl \-LO https://storage.googleapis.com/minikube/releases/latest/minikube\_latest\_amd64.deb  
-sudo dpkg \-i minikube\_latest\_amd64.deb  
-```
+   * Umożliwi to demonstrację automatycznego ponawiania dostarczania zdarzeń w przypadku niepowodzenia.
 
-#### Metoda 2: Instalacja na WSL2 (zalecana dla środowiska Windows) 
+4. **Obserwowalność i monitoring:**
 
-Dla użytkowników WSL2 zaleca się zapoznanie się ze szczegółowym przewodnikiem instalacji dostępnym pod adresem: \[Kubernetes Setup with Minikube on WSL2\](https://gaganmanku96.medium.com/kubernetes-setup-with-minikube-on-wsl2-2023-a58aea81e6a3). 
+   * Wdrożymy eksportery OpenTelemetry w kluczowych komponentach.
 
-### **3\. Instalacja Knative Client (kn)** 
+   * Dzięki temu możliwa będzie analiza tras zdarzeń, czasów przetwarzania, liczby prób oraz przypadków przekierowania do DLS.
 
-Knative Client (\`kn\`) to narzędzie wiersza poleceń służące do zarządzania komponentami Knative. Instalacja odbywa się poprzez następujące komendy: 
 
-```bash   
-wget https://github.com/knative/client/releases/download/knative-v1.18.0/kn-linux-amd64   
-mv kn-linux-amd64   
-kn chmod \+x kn   
-sudo mv kn /usr/local/bin   
-kn version  
-```
+### **Wykorzystanie Kameleta do symulacji błędów i obsługi przez Dead Letter Sink**
 
-### **4\. Instalacja Knative Quickstart Plugin (kn-quickstart)**
+Zastosujemy Kamelet jako komponent pośredniczący, którego zadaniem będzie celowe odrzucanie części wiadomości. Celem jest wygenerowanie błędów dostarczania, które trafią następnie do Dead Letter Sink (DLS), gdzie zostaną przekazane do OpenTEL w celu zwizualizowania ich w Grafanie.
 
-Plugin kn-quickstart ułatwia proces konfiguracji środowiska Knative. Sposób instalacji przedstawiono poniżej:
+#### **Mechanizm działania:**
 
-```bash   
-wget https://github.com/knative-extensions/kn-plugin-quickstart/releases/download/knative-v1.18.0/kn-quickstart-linux-amd64  
-mv kn-quickstart-linux-amd64 kn-quickstart  
-sudo mv kn-quickstart /usr/local/bin  
-kn quickstart \--help  
-```
+1. Kamelet zostanie zaimplementowany jako konsument wiadomości (sink), który jako odpowiedź na co 5 wiadomość zwraca wyjątek..
 
-### 5\. Tworzenie Klastra Knative za pomocą kn quickstart
+2. W przypadku zwrócenia wyjątku przez Kameleta, Knative Eventing automatycznie podejmieł próbę ponownego dostarczenia wiadomości zgodnie z polityką *retry*.
 
-Do szybkiego utworzenia i skonfigurowania klastra z zainstalowanym Knative należy użyć komendy kn quickstart:
+3. Po przekroczeniu limitu prób, wiadomość zostanie przekierowana do wcześniej zdefiniowanego *Dead Letter Logger*, którym będzie osobny Knative Service odpowiedzialny za logowanie błędów. Odwołanie do tego serwisu będzie zdefiniowane jako *deadLetterSink* brokera *badword-broker (slack-sink/config/100-broker.yaml).*
 
-```bash   
-kn quickstart minikube  
-```
+4. DLS przekaże informacje o nieudanych zdarzeniach do Grafany za pośrednictwem zintegrowanego systemu monitoringu w standardzie Open Telemetry.
 
-**Należy postępować zgodnie z instrukcjami wyświetlanymi przez skrypt podczas jego wykonywania.**
+![](images/image3.png)
 
-W celu walidacji poprawności utworzenia klastra, można wykorzystać komendę:
 
-```bash   
-minikube profile list  
-```
+# Architektura Rozwiązania
 
 # Instalacja aplikacji
 
@@ -342,15 +401,459 @@ Wykonujemy ewentualne polecenia wypisane przez skrypt.
 
 # Uruchamianie demo
 
-TODO gdzie jest front, gdzie jest backend, co sie dzieje jak dodaje się komentarz
+1. **Frontend**  
+   Frontend aplikacji jest dostępny pod http://localhost:3000/
+
+2. **Backend**  
+   Prosty test backendu można zoabaczyć pod http://localhost:8080/
+
+3. **Dodawanie komentarza**  
+   Po wejściu na stronę frontendu użytkownik może dodać komentarz do książki. Komentarz trafia do backendu, a następnie jako CloudEvent do brokera Knative. Broker przekazuje zdarzenie do usługi `file-sink` która zapisuje wiadomość do pliku lokalnego. W przypadku błędów (symulowanych w `file-sink`) zdarzenie trafia do `dead-letter-logger` gdzie również jest zapisywane do pliku.
+
+4. **Weryfikacja działania usług**  
+   - Aby sprawdzić, jakie zdarzenia otrzymał `file-sink`, użyj polecenia:
+     ```bash
+     kubectl exec -it <file-sink-pod-name> -- cat /data/events.log
+     ```
+   - Aby sprawdzić, jakie zdarzenia otrzymał `dead-letter-logger`, użyj polecenia:
+     ```bash
+     kubectl exec -it <dead-letter-logger-pod-name> -- cat /data/events.log
+     ```
 
 # Użycie AI
 
-TODO
+## Prompt:
+```
+Rozwiń punkt 4. "Dodaj retry i dead-letter sink
+Cel: pokazać jak Knative Eventing radzi sobie z błędami."
+kod modyfikowanego projektu znajduje się https://github.com/knative/docs/tree/main/code-samples/eventing/bookstore-sample-app/solution
+Dodatkowy opis modifikowanej aplikacji: Welcome to the solution directory of the Knative Bookstore tutorial. This directory contains the fully implemented version of the event-driven bookstore application using Knative. 
+
+You can find the tutorial for this solution here.
+
+Directory Structure
+Here's an overview of the components in the solution:
+
+bad-word-filter/: Knative Function for filtering out inappropriate content
+db-service/: Database service for storing book reviews and comments
+frontend/: User interface for the bookstore application built with Next.js
+node-server/: Node.js server for handling backend operations
+sentiment-analysis-app/: Knative Function for analyzing the sentiment of book reviews
+sequence/: Knative Sequence setup for orchestrating workflows
+slack-sink/: Integration with Slack for notifications with Apache Camel
+Additional Files
+setup.sh: Script for setting up the required services including installing Knative, frontend, and backend node-server
+solution.sh: Script for installing everything, deploying the entire solution. It includes the setup script as well.
+```
+Odpowiedź:
+Aby zilustrować obsługę błędów w Knative Eventing oraz wykorzystanie mechanizmu Dead Letter Sink (DLS) w aplikacji **bookstore-sample-app**, możesz wprowadzić następujące modyfikacje:
+
+---
+
+### 🔧 1. Symulacja błędów w usłudze Slack Sink
+
+**Cel:** Wymusić błędy w dostarczaniu zdarzeń do usługi Slack Sink, aby przetestować mechanizm ponownych prób i przekierowania do DLS.
+
+**Działania:**
+
+* Zmodyfikuj kod usługi `slack-sink`, aby losowo zwracała błędy HTTP 500.
+
+  Przykład w języku Go:
+
+```go
+  func handler(w http.ResponseWriter, r *http.Request) {
+      if rand.Float32() < 0.5 {
+          http.Error(w, "Simulated failure", http.StatusInternalServerError)
+          return
+      }
+      // Normalne przetwarzanie
+  }
+```
+
+
+
+* Zbuduj i zaktualizuj obraz kontenera `slack-sink` w klastrze Kubernetes.
+
+---
+
+### 📦 2. Konfiguracja Dead Letter Sink (DLS)
+
+**Cel:** Skonfigurować miejsce docelowe dla zdarzeń, które nie zostały pomyślnie dostarczone po określonej liczbie prób.
+
+**Działania:**
+
+* Utwórz prostą usługę Knative, która będzie pełniła rolę DLS, np. `dead-letter-logger`.([docs.triggermesh.io][1])
+
+  Przykład w języku Go:
+
+```go
+  func handler(w http.ResponseWriter, r *http.Request) {
+      body, _ := ioutil.ReadAll(r.Body)
+      log.Printf("Received dead letter: %s", string(body))
+      w.WriteHeader(http.StatusOK)
+  }
+```
+
+
+
+* Zdefiniuj usługę Knative:
+
+```yaml
+  apiVersion: serving.knative.dev/v1
+  kind: Service
+  metadata:
+    name: dead-letter-logger
+  spec:
+    template:
+      spec:
+        containers:
+          - image: <ścieżka_do_obrazu_dead_letter_logger>
+```
+
+
+
+* Zaktualizuj konfigurację `Broker` lub `Trigger`, aby uwzględnić DLS:([docs.triggermesh.io][2])
+
+```yaml
+  apiVersion: eventing.knative.dev/v1
+  kind: Broker
+  metadata:
+    name: bookstore-broker
+  spec:
+    delivery:
+      deadLetterSink:
+        ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: dead-letter-logger
+      retry: 3
+      backoffPolicy: exponential
+      backoffDelay: PT1S
+```
+
+
+
+W powyższej konfiguracji:
+
+* `retry: 3` oznacza, że Knative podejmie 3 próby ponownego dostarczenia zdarzenia.
+
+* `backoffPolicy: exponential` oraz `backoffDelay: PT1S` definiują strategię opóźnień między próbami.([Knative][3], [julianfriedman.org][4])
+
+---
+
+### 🔍 3. Obserwacja i weryfikacja
+
+**Cel:** Monitorować działanie mechanizmu DLS oraz ponownych prób dostarczania zdarzeń.
+
+**Działania:**
+
+* Wysyłaj komentarze zawierające "bad words", aby wywołać zdarzenia kierowane do `slack-sink`.
+
+* Obserwuj logi usługi `dead-letter-logger`, aby potwierdzić odbiór zdarzeń po nieudanych próbach dostarczenia.
+
+* Monitoruj metryki i ślady (traces) za pomocą narzędzi takich jak OpenTelemetry, Jaeger lub Prometheus, aby analizować opóźnienia, liczbę prób i inne parametry związane z dostarczaniem zdarzeń.
+
+---
+
+Dzięki tym modyfikacjom możesz skutecznie zilustrować mechanizmy obsługi błędów w Knative Eventing oraz wykorzystanie Dead Letter Sink w praktyce.
+
+[1]: https://docs.triggermesh.io/1.24/guides/creatingadls/?utm_source=chatgpt.com "Creating a Bridge With a Dead Letter Sink (DLS) - TriggerMesh"
+[2]: https://docs.triggermesh.io/1.27/guides/patterns/creatingadls/?utm_source=chatgpt.com "Creating a Bridge With a Dead Letter Sink (DLS) - TriggerMesh"
+[3]: https://master--knative.netlify.app/v0.19-docs/eventing/event-delivery/?utm_source=chatgpt.com "Event delivery - Knative"
+[4]: https://julianfriedman.org/docs/dev/eventing/event-delivery/?utm_source=chatgpt.com "Event delivery - Knative - Julian Friedman dot Org"
+
+-------
+## Prompt:
+```
+Zaporponowałeś: "Zaktualizuj konfigurację Broker lub Trigger, aby uwzględnić DLS:" Co jest lepiej zaktualizować - konfigurację Broker czy Trigger? Czy jest jakaś różnica?
+```
+Świetne pytanie — i tak, **jest różnica** między ustawieniem Dead Letter Sink (DLS) na **Brokerze** a na **Triggerze**, i wybór zależy od tego, **co dokładnie chcesz osiągnąć**.
+
+---
+
+### 🔹 **DLS na poziomie Triggera (`spec.delivery.deadLetterSink`)**
+
+* **Zalecane w większości przypadków**.
+* Działa tylko dla konkretnego Triggera — czyli tylko wtedy, gdy to konkretny subskrybent nie może poprawnie przetworzyć zdarzenia.
+* Pozwala mieć **różne DLS-y dla różnych Triggerów**, co jest bardzo przydatne np. gdy masz różne typy błędów w różnych częściach systemu.
+* Daje większą kontrolę i obserwowalność nad tym, *kto konkretnie zawiódł*.
+
+✅ **Kiedy używać:**
+Gdy chcesz śledzić błędy konkretnego odbiorcy (np. Slacka), lub masz wiele triggerów i chcesz każdemu przypisać osobną logikę obsługi błędów.
+
+---
+
+### 🔸 **DLS na poziomie Brokera (`spec.config.delivery.deadLetterSink`)**
+
+* Działa **globalnie** dla wszystkich Triggerów korzystających z tego Brokera.
+* Używana jako „domyślna” strategia błędów, jeśli konkretne Triggery jej nie nadpisują.
+* Może pomóc, gdy chcesz mieć **jedno centralne miejsce logowania błędów** (np. wspólny temat w Kafka, CloudEvent logger, itp.).
+
+⚠️ **Ograniczenie:**
+Nie wiesz dokładnie, który Trigger/subskrybent zawiódł, jeśli nie przechowujesz tej informacji w treści zdarzenia.
+
+✅ **Kiedy używać:**
+Gdy chcesz mieć domyślne zabezpieczenie „na wszelki wypadek” albo gdy masz proste środowisko z jednym głównym celem logowania błędów.
+
+---
+
+### 📌 **Podsumowanie: co lepiej zaktualizować?**
+
+W Twoim projekcie (gdzie testujesz *losowe błędy tylko w jednej konkretnej usłudze* – Slack sink), **lepiej ustawić DLS na poziomie Triggera**. Umożliwia to precyzyjne testowanie retry i DLS tylko dla tego jednego przypadku, bez wpływu na resztę systemu.
+
+
+Chcesz przykład konfiguracji DLS w Triggerze na podstawie Twojego projektu?
+
+------
+
+## prompt: nie został zapisany, coś podobnego do "Napisz testowy serwis Knative który będzie odbierał wiadomości od node-server". Odpoweidź powstała iteracyjnie po paru promptach.
+
+To create a simple Knative service and enable communication between your node server and this
+test service, follow these steps:
+1. Create a simple Knative Service (YAML example)
+Create a file, e.g., test-service.yaml:
+```
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+name: test-service
+spec:
+template:
+spec:
+containers:
+- image: docker.io/library/nginx:alpine # or your own test image
+ports:
+- containerPort: 80
+```
+Apply it with:
+kubectl apply -f test-service.yaml
+2. Add communication from node server to test service
+You need to create a Knative Trigger that sends events from the broker (used by your node server)
+to the test-service. Example trigger (test-trigger.yaml):
+```
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+name: test-service-trigger
+spec:
+broker: bookstore-broker
+filter:
+attributes:
+type: test-event # or whatever event type you want to route
+subscriber:
+ref:
+apiVersion: serving.knative.dev/v1
+kind: Service
+name: test-service
+```
+Apply it with:
+kubectl apply -f test-trigger.yaml
+3. Send an event from node server
+In your node server code, send a CloudEvent with type: test-event to the broker endpoint. The
+broker will route it to test-service via the trigger above.
+Summary:
+Deploy a Knative service (test-service).
+Create a Trigger to route events from the broker to test-service.
+Send events from your node server to the broker with the correct type.
+Let me know if you want a sample Node.js code snippet for sending the event!
+To send a message from the node server to the Knative Sequence, you can add an endpoint that
+sends a CloudEvent of type new-review-comment to the broker (which will then be routed to the
+Sequence).
+Here is a sample Express route you can add to your index.js:
+```
+// ...existing code...
+const fetch = require('node-fetch'); // Add at the top if not already present
+app.post('/send-to-sequence', async (req, res) => {
+ try {
+ const brokerURI = process.env.K_SINK || 'http://bookstore-broker.knativeeventing.svc.cluster.local'; // Use env or default
+ const reviewText = req.body.reviewText || "Test review from node-server";
+ const event = {
+ specversion: "1.0",
+ type: "new-review-comment",
+ source: "node-server",
+ id: Date.now().toString(),
+ datacontenttype: "application/json",
+ data: {
+ reviewText: reviewText
+ }
+ };
+ const response = await fetch(brokerURI, {
+ method: 'POST',
+ headers: {
+ 'Content-Type': 'application/cloudevents+json',
+ },
+ body: JSON.stringify(event),
+ });
+ if (!response.ok) {
+ return res.status(500).json({error: 'Failed to send event to sequence'});
+ }
+ res.status(200).json({success: true, message: 'Event sent to sequence'});
+ } catch (error) {
+ res.status(500).json({error: 'Internal server error'});
+ }
+});
+// ...existing code…
+```
+This will allow you to POST to /send-to-sequence with a JSON body like { "reviewText": "Hello
+Sequence!" } and have the event routed through your Knative Sequence.
+To create a service that receives these messages (CloudEvents from the Sequence) and saves them
+to a file, you can use a simple Knative Service with a minimal HTTP server. Here’s how you can do
+it:
+1. Create a Dockerized Node.js Service
+index.js:
+```
+const express = require('express');
+const fs = require('fs');
+const app = express();
+const PORT = process.env.PORT || 8080;
+app.use(express.json());
+app.post('/', (req, res) => {
+ // Save the received event to a file (append mode)
+ fs.appendFileSync('/data/events.log', JSON.stringify(req.body) + '\n');
+ res.status(200).send('Event saved');
+});
+app.listen(PORT, () => {
+ console.log(`File sink service listening on port ${PORT}`);
+});
+```
+dokckerfile:
+```
+FROM node:18-alpine
+WORKDIR /app
+COPY index.js .
+RUN npm install express
+VOLUME ["/data"]
+CMD ["node", "index.js"]
+```
+2. Build and Push the Image
+```
+docker build -t <your-dockerhub-username>/file-sink:latest .
+docker push <your-dockerhub-username>/file-sink:latest
+```
+3. Deploy as a Knative Service
+file-sink.yaml:
+```
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+ name: file-sink
+spec:
+ template:
+ spec:
+ containers:
+ - image: <your-dockerhub-username>/file-sink:latest
+ volumeMounts:
+ - name: data
+ mountPath: /data
+ volumes:
+ - name: data
+ emptyDir: {}
+```
+Apply with:
+kubectl apply -f file-sink.yaml
+4. Route Events to the Service
+Create a Trigger or set the Sequence’s reply to point to this service, e.g.:
+reply:
+ ref:
+ apiVersion: serving.knative.dev/v1
+ kind: Service
+ name: file-sink
+Or use a Trigger to route from the broker to file-sink.
+Summary:
+The service receives HTTP POSTs (CloudEvents), appends them to /data/events.log.
+Deploy as a Knative Service.
+Route events to it from your Sequence or Broker.
+Let me know if you want a ready-to-use YAML or more details!
+
+-----
+## Użycie AI do radzenia sobie z błędami
+
+W tym projekcie narzędzia AI były często wykorzystywane w ten sposób. Spisanie wszystkich takich promptów ma ograniczony sens więc postanowiliśmy przedstawić tylko jeden, przykładowy prompt:
+
+### Prompt:
+```
+I've rebuilt my image:
+eval $(minikube docker-env)
+docker build -t file-sink:latest .
+docker tag file-sink:latest dev.local/file-sink:latest
+
+
+and I wanted to reapply the configuration so a new image gets pulled:
+kn service apply file-sink --image=dev.local/file-sink --pull-policy=Never
+but I got:
+
+No changes to apply to service 'file-sink'
+```
+
+Odpowiedź:
+
+
+The message:
+
+```
+No changes to apply to service 'file-sink'
+```
+
+means that `kn service apply` detected no difference between the existing service and the new one you're trying to apply — so it skips any update.
+
+This happens even if you've rebuilt the image, because Knative identifies the image by its reference (`dev.local/file-sink`) — **not by its content**. Since you're using `--pull-policy=Never`, it expects the image to be locally available and doesn't try to fetch a newer version.
+
+### ✅ Solutions
+
+#### 🔁 Option 1: Force an update by changing the image reference
+
+Add a **dummy tag** (like a timestamp or version bump) to ensure `kn` detects a change:
+
+```bash
+NEW_TAG="dev.local/file-sink:$(date +%s)"
+docker tag file-sink:latest $NEW_TAG
+kn service apply file-sink --image=$NEW_TAG --pull-policy=Never
+```
+
+This tricks Knative into thinking it's a different image, even though it's actually the same one locally.
+
+---
+
+#### 🔄 Option 2: Delete and recreate the service (not always ideal)
+
+If you don’t mind downtime or losing service state:
+
+```bash
+kn service delete file-sink
+kn service create file-sink --image=dev.local/file-sink:latest --pull-policy=Never
+```
+
+---
+
+#### 🔄 Option 3: Use `kn service update` instead
+
+Sometimes `kn service update` forces a new revision even when `apply` doesn't:
+
+```bash
+kn service update file-sink --image=dev.local/file-sink:latest --pull-policy=Never
+```
+
+This can trigger a rollout without needing to change the tag.
+
+---
+
+Let me know if you want to automate this tagging or update it directly in your build script.
+
+
+---------------------------------------
+---------------------------------------
+---------------------------------------
+
 
 # Podsumowanie i wnioski
 
-TODO
+Podczas realizacji projektu napotkaliśmy istotne trudności związane z konfiguracją oryginalnej aplikacji demonstracyjnej Knative Bookstore. Głównym problemem był brak aktywnego rozwoju tej aplikacji, co skutkowało niekompatybilnością wersji, przestarzałymi zależnościami i nieaktualną dokumentacją. 
+
+Ze smutkiem wspominamy każdą godzinę poświęconą na próbę otworzenia oryginalnej aplikacji, zanim zorientowaliśmy się że to nie jest optymalne podejście, ale liczymy że każda z tych godzin dosadniej uświadomiła nam jak ważne jest całościowe i krytyczne spojrzenie na projekt.
+
+Kluczowe okazało się skupienie na rzeczywistej istocie projektu – telemetri, demonstracji mechanizmów event-driven, oraz dodatkowo obsługi błędów w Knative – zamiast wiernego odtwarzania każdego elementu oryginalnej architektury. W przypadku problemów konfiguracyjnych uprościliśmy rozwiązanie, zastępując problematyczne serwisy własnymi, prostszymi komponentami. Takie podejście pozwoliło nam nie tylko ukończyć projekt, ale także lepiej zrozumieć kluczowe mechanizmy Knative i praktyczne aspekty wdrażania rozwiązań serverless oraz event-driven w Kubernetes. 
+
+Udało się skutecznie wdrożyć system observability z wykorzystaniem OpenTelemetry, Prometheusa i Grafany. Było to kształcące doświadczenie, które pozwoliło nam w praktyce poznać, jak działają narzędzia do monitorowania i śledzenia przepływu zdarzeń w architekturze event-driven. Dzięki temu mogliśmy lepiej zrozumieć zarówno techniczne aspekty wdrożenia, jak i korzyści płynące z monitorowania rozproszonych systemów.
 
 # **Podział zadań**
 
