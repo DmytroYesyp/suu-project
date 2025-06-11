@@ -1,7 +1,9 @@
 
 kubectl create configmap my-dashboard-config \
   --from-file=my-dashboard.json \
-  -n monitoring
+  --from-file=grafana/db-dashboard.json \
+  -n monitoring \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl patch deployment grafana \
   -n monitoring \

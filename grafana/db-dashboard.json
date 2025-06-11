@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -86,7 +86,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 4,
+      "id": 1,
       "options": {
         "legend": {
           "calcs": [],
@@ -106,14 +106,14 @@
             "uid": "PF4CDB4FB77F7CFE0"
           },
           "editorMode": "code",
-          "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+          "expr": "up{job=\"postgres-exporter\"}",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Cpu Load %",
+      "title": "Exporter Up",
       "type": "timeseries"
     },
     {
@@ -181,7 +181,7 @@
         "x": 12,
         "y": 0
       },
-      "id": 7,
+      "id": 2,
       "options": {
         "legend": {
           "calcs": [],
@@ -201,14 +201,14 @@
             "uid": "PF4CDB4FB77F7CFE0"
           },
           "editorMode": "code",
-          "expr": "nodejs_external_memory_bytes / (1024 * 1024)",
+          "expr": "rate(process_cpu_seconds_total[5m]) * 100",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Nodejs External Memory Usage",
+      "title": "Cpu Usage",
       "type": "timeseries"
     },
     {
@@ -274,6 +274,101 @@
         "h": 8,
         "w": 12,
         "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PF4CDB4FB77F7CFE0"
+          },
+          "editorMode": "code",
+          "expr": "pg_stat_activity_count{datname=\"mydatabase\", state=\"active\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Active Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PF4CDB4FB77F7CFE0"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
         "y": 8
       },
       "id": 6,
@@ -296,109 +391,14 @@
             "uid": "PF4CDB4FB77F7CFE0"
           },
           "editorMode": "code",
-          "expr": "nodejs_eventloop_lag_p50_seconds\r\n",
+          "expr": "sum by (datname) (pg_locks_count{mode=\"ExclusiveLock\", granted=\"false\"})",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Event Loop Lag P50",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PF4CDB4FB77F7CFE0"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PF4CDB4FB77F7CFE0"
-          },
-          "editorMode": "code",
-          "expr": "nodejs_active_resources_total",
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Total Active NodeJs Resources",
+      "title": "Blocked Queries",
       "type": "timeseries"
     },
     {
@@ -466,7 +466,7 @@
         "x": 0,
         "y": 16
       },
-      "id": 2,
+      "id": 5,
       "options": {
         "legend": {
           "calcs": [],
@@ -485,19 +485,15 @@
             "type": "prometheus",
             "uid": "PF4CDB4FB77F7CFE0"
           },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "prometheus_http_requests_total",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
+          "editorMode": "code",
+          "expr": "pg_database_size_bytes{datname=\"mydatabase\"} / (1024 * 1024 * 1024)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A",
-          "useBackend": false
+          "refId": "A"
         }
       ],
-      "title": "HTTP Request Count",
+      "title": "Database Size",
       "type": "timeseries"
     },
     {
@@ -565,7 +561,7 @@
         "x": 12,
         "y": 16
       },
-      "id": 1,
+      "id": 4,
       "options": {
         "legend": {
           "calcs": [],
@@ -584,19 +580,15 @@
             "type": "prometheus",
             "uid": "PF4CDB4FB77F7CFE0"
           },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "nodejs_heap_size_used_bytes",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.90, rate(pg_stat_activity_query_time_bucket[5m]))",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "Heap size",
-          "useBackend": false
+          "refId": "A"
         }
       ],
-      "title": "Heap Memory Usage",
+      "title": "Query Duration - P90",
       "type": "timeseries"
     }
   ],
@@ -611,8 +603,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "node-server-telemetry",
-  "uid": "beokd6h4io7wge",
+  "title": "PostgeSQL metrics",
+  "uid": "ceomrzq9381dsc",
   "version": 2,
   "weekStart": ""
 }
