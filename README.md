@@ -320,6 +320,54 @@ Pulpit nawigacyjny Grafany prezentujący ogólny przegląd stanu i wydajności s
 
 Ten widok z interfejsu użytkownika Prometheus przedstawia listę wszystkich celów (targets) monitorowania. Wskazuje ich status (UP/DOWN) oraz szczegóły skrobania, potwierdzając, czy Prometheus skutecznie zbiera metryki ze skonfigurowanych źródeł.
 
+Metryki node servera w grafanie:
+<br>
+<img src='images\OTel_grafana_node-server_visualtisation_1.png'>
+<br>
+
+OTel-collector console:
+<br>
+<img src='images\OTel_otel-collector_console_1.png'>
+<br>
+
+
+
+
+## Wdrożenie Systemu Trasowania (Tracingu) z Użyciem Jaeger
+
+  W celu uzyskania głębszego wglądu w działanie poszczególnych żądań i operacji w systemie, wdrożono również system trasowania rozproszonego oparty o Jaeger. Umożliwia to śledzenie przepływu żądań przez różne komponenty aplikacji, identyfikację wąskich gardeł oraz ułatwia diagnozowanie problemów.
+
+### Architektura Trasowania
+
+System trasowania został zintegrowany z istniejącą architekturą monitorowania:
+
+* Aplikacje (`node-server` i `file-sink`): Każdy z tych serwisów został zinstrumentowany przy użyciu bibliotek OpenTelemetry. Generują one dane trasowania (tzw. spany) dla przychodzących i wychodzących żądań.
+
+* OpenTelemetry Collector: Działa jako centralny agent, który odbiera dane trasowania z obu serwisów. Po ich przetworzeniu, kolektor przesyła je bezpośrednio do backendu Jaeger.
+
+* Jaeger: Służy jako system do przechowywania, analizy i wizualizacji zebranych tras. Udostępnia interfejs użytkownika, który pozwala na szczegółowe przeglądanie poszczególnych śladów.
+
+### Konfiguracja i Implementacja
+
+Implementacja trasowania objęła dwa kluczowe serwisy: `node-server` oraz `file-sink`. Aby włączyć generowanie tras, dla każdego z nich stworzono dedykowany plik konfiguracyjny JavaScript, który jest ładowany przy starcie aplikacji:
+
+1. `tracing.js`: Odpowiedzialny za instrumentację serwisu node-server.
+
+2. `file-sink-tracing.js`: Odpowiedzialny za instrumentację serwisu `file-sink` (uruchamianego przez `index.js`).
+
+Pliki te inicjują OpenTelemetry SDK, konfigurują eksporter OTLP do wysyłania danych do kolektora oraz automatycznie instrumentują popularne biblioteki (takie jak Express.js czy klienty HTTP), aby minimalizować potrzebę ręcznych zmian w kodzie aplikacji.
+
+Weryfikacja i Wizualizacja Tras
+Poniższe zrzuty ekranu z interfejsu użytkownika Jaeger potwierdzają, że dane trasowania są poprawnie zbierane i przesyłane dla obu monitorowanych serwisów.
+
+<br>
+<img src='images\file-sink-service_jaeger_traces_1.png'>
+<br>
+
+<br>
+<img src='images\node-server_jaeger_traces_1.png'>
+<br>
+
 ## **Opis Działania Aplikacji**
 
 W niniejszej sekcji przedstawiono wizualne potwierdzenie poprawnego uruchomienia komponentów frontendu i backendu aplikacji.  
@@ -841,7 +889,146 @@ Let me know if you want to automate this tagging or update it directly in your b
 
 
 ---------------------------------------
+### Prompt:
+
+\# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+
+  ...
+
+\# TYPE db_query_duration_seconds histogram
+
+напиши мені декілка PomQL скриптів для графани щоб відображати ще 4 метрики окрім HTTP request count і heap memory usage
+
+### Odpowiedź:
+
+Ось кілька PromQL скриптів для Grafana, які допоможуть вам відобразити ще 4 метрики, крім кількості HTTP-запитів та використання пам'яті купи:
+
+1. Завантаження CPU процесу (у відсотках)
+Ця метрика показує, який відсоток CPU використовує ваш Node.js процес. Використовуємо rate для розрахунку швидкості зміни лічильника process_cpu_seconds_total за певний проміжок часу (наприклад, 5 хвилин) і множимо на 100, щоб отримати відсотки.
+
+``` bash
+rate(process_cpu_seconds_total[5m]) * 100
+```
+
+Опис: Відсоток CPU, який використовує відстежуваний процес.
+Тип панелі Grafana: Graph
+Примітка: Це показує завантаження CPU одним процесом. Якщо у вас є кілька інстансів програми, ви можете використовувати sum by (instance) або avg by (instance) для агрегації.
+2. Загальна кількість активних ресурсів Node.js
+Ця метрика показує загальну кількість активних ресурсів, які підтримують роботу циклу подій (event loop) Node.js. Це можуть бути відкриті файли, сокети тощо.
+
+``` bash
+nodejs_active_resources_total
+```
+
+Опис: Загальна кількість активних ресурсів Node.js.
+Тип панелі Grafana: Single Stat або Graph (якщо ви хочете бачити тренд).
+Примітка: Ви також можете розбити це за типом ресурсу, використовуючи nodejs_active_resources. Наприклад, для перегляду кількості активних сокетів: nodejs_active_resources{type="TCPSocketWrap"}
+3. Медіана затримки циклу подій (Event Loop Lag P50)
+Затримка циклу подій є критично важливою метрикою для Node.js, оскільки вона показує, наскільки швидко Node.js може обробляти події. P50 (50-й перцентиль, або медіана) дає гарне уявлення про типову затримку.
+
+``` bash
+nodejs_eventloop_lag_p50_seconds
+```
+
+Опис: 50-й перцентиль затримки циклу подій Node.js (у секундах).
+Тип панелі Grafana: Graph або Single Stat.
+Примітка: Чим менше значення, тим краще. Великі значення можуть свідчити про блокування циклу подій.
+4. Використання зовнішньої пам'яті Node.js (у мегабайтах)
+Ця метрика відображає обсяг пам'яті, виділеної Node.js поза купою V8. Це може бути пам'ять, що використовується буферами, нативними модулями тощо.
+
+``` bash
+nodejs_external_memory_bytes / (1024 * 1024)
+```
+
+Опис: Розмір зовнішньої пам'яті Node.js у мегабайтах.
+Тип панелі Grafana: Graph або Single Stat.
+Примітка: Важливо відстежувати цю метрику, оскільки вона може зростати незалежно від використання купи V8.
+Ці PromQL скрипти дадуть вам додаткові інсайти у продуктивність вашої Node.js програми в Grafana. Не забудьте налаштувати відповідні типи панелей (наприклад, "Graph" для трендів або "Single Stat" для поточних значень) та одиниці виміру в Grafana для кращої візуалізації.
+
+
 ---------------------------------------
+
+### Prompt:
+(base) usr@usr:/mnt/c/Users/123gh/pythonProjects/suu-project$ kubectl logs file-sink-00001-deployment-6d98f85976-2b2nn
+
+'Defaulted container "user-container" out of: user-container, queue-proxy
+
+/app/file-sink-tracing.js:15
+
+  resource: new Resource({
+
+            ^
+
+
+
+TypeError: Resource is not a constructor
+
+    at Object.<anonymous> (/app/file-sink-tracing.js:15:13)
+
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+
+...
+
+EXPOSE 8080
+
+
+CMD ["node", "-r", "./file-sink-tracing.js", "index.js"]
+
+як то пофіксити
+
+### Odpowiedź:
+
+Привіт! Схоже, ви зіткнулися з поширеною проблемою під час налаштування OpenTelemetry в Node.js.
+
+Помилка TypeError: Resource is not a constructor майже завжди вказує на конфлікт або несумісність версій між різними пакетами @opentelemetry/*, які встановлені у вашому проєкті.
+
+Ваш код у file-sink-tracing.js написаний правильно для сучасних версій OpenTelemetry. Проблема полягає не в самому коді, а в залежностях, які встановлюються у ваш Docker-образ. Найімовірніше, копіюється старий файл package-lock.json або встановлюються несумісні між собою версії пакетів.
+
+Як це виправити
+Найбільш надійний спосіб — це забезпечити, щоб усі пакети OpenTelemetry були свіжих та сумісних версій.
+
+Крок 1: Оновіть версії у package.json
+
+Відкрийте ваш файл package.json та встановіть для пакетів OpenTelemetry версії з одного сумісного випуску. Це критично важливо для їхньої стабільної роботи.
+
+Ось приклад сумісних версій, які ви можете використати:
+
+``` JSON
+"dependencies": {
+  "@opentelemetry/api": "^1.8.0",
+  "@opentelemetry/auto-instrumentations-node": "^0.47.0",
+  "@opentelemetry/exporter-trace-otlp-http": "^0.51.0",
+  "@opentelemetry/resources": "^1.25.0",
+  "@opentelemetry/sdk-node": "^0.51.0",
+  "@opentelemetry/semantic-conventions": "^1.25.0",
+  "express": "^4.19.2"
+}
+```
+
+Крок 2: Виконайте чисту установку залежностей
+
+Щоб гарантовано позбутися старих або конфліктних пакетів, видаліть папку node_modules і файл package-lock.json з вашого проєкту локально.
+
+```Bash
+rm -rf node_modules package-lock.json
+```
+
+Потім запустіть установку заново. Це створить новий, консистентний файл package-lock.json на основі версій, які ви вказали в package.json.
+
+```Bash
+npm install
+```
+
+Крок 3: Перезберіть ваш Docker-образ
+
+Тепер, коли у вас є оновлені залежності та новий package-lock.json, перезберіть Docker-образ. Оскільки ваш Dockerfile копіює package*.json, він підхопить і новий лок-файл.
+
+```Bash
+docker build -t file-sink-service .
+```
+
+Після виконання цих кроків ваш Docker-образ буде містити узгоджені версії пакетів, і помилка TypeError має зникнути.
+
 ---------------------------------------
 
 
