@@ -142,7 +142,53 @@ Z powodu przestarzałości, niezgodności wersji i problemów z konfiguracją (a
 
 ### Implementacja serwisu file-sink
 
-TODO
+Konfiguracja `Service` i `Deyployment`
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-sink
+  labels:
+    app: file-sink
+spec:
+  selector:
+    matchLabels:
+      app: file-sink
+  template:
+    metadata:
+      labels:
+        app: file-sink
+      # annotations:
+      #   # Tells Knative not to try pulling the image from Docker Hub
+      #   "container.applinks.io/skipImagePull": "true"
+    spec:
+      containers:
+        - image: file-sink:latest
+          name: file-sink
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - containerPort: 8123
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-sink-svc
+spec:
+  selector:
+    app: file-sink
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8123
+  type: LoadBalancer
+```
 
 #### Symulacja błędów w serwisie file-sink
 
