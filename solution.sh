@@ -95,6 +95,7 @@ kubectl apply -f otel-collector/otel-collector-servicemonitor.yaml
 
 kubectl apply -f otel-collector/prometheus-deployment.yaml
 kubectl apply -f otel-collector/grafana.yaml
+kubectl apply -f jaeger-traces/jaeger-all-in-one.yaml
 echo "✅ OpenTelemetry Collector components deployed."
 
 echo ""
@@ -178,10 +179,12 @@ kubectl apply -f db-service
 echo "✅ Database installed."
 
 cd file-sink
-eval $(minikube docker-env)
+# eval $(minikube docker-env)
 docker build -t file-sink:latest .
-docker tag file-sink:latest dev.local/file-sink:latest
-kn service apply file-sink --image=dev.local/file-sink --pull-policy=Never
+# docker tag file-sink:latest dev.local/file-sink:latest
+minikube image load file-sink:latest
+kubectl apply -f config
+# kn service apply file-sink --image=dev.local/file-sink --pull-policy=Never
 cd -
 
 cd dead-letter-logger

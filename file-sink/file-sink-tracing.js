@@ -1,4 +1,4 @@
-// tracing.js
+// file-sink-tracing.js
 'use strict';
 
 const { NodeSDK } = require('@opentelemetry/sdk-node');
@@ -13,18 +13,18 @@ const otlpExporter = new OTLPTraceExporter({
 
 const sdk = new NodeSDK({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'node-server',
+    [SemanticResourceAttributes.SERVICE_NAME]: 'file-sink-service',
   }),
   traceExporter: otlpExporter,
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
 sdk.start();
-console.log('Tracing initialized with NodeSDK');
+console.log('Tracing initialized with NodeSDK for file-sink-service (HTTP Exporter)');
 
 process.on('SIGTERM', () => {
   sdk.shutdown()
-    .then(() => console.log('Tracing terminated'))
-    .catch((error) => console.error('Error terminating tracing', error))
+    .then(() => console.log('file-sink-service tracing terminated'))
+    .catch((error) => console.error('Error terminating file-sink-service tracing', error))
     .finally(() => process.exit(0));
 });
